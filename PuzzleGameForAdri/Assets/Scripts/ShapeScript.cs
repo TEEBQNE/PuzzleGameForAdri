@@ -3,25 +3,10 @@ using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
-/// Done:
-/// Add a canMove flag where a player can or can't move an object
-///     > Add a condition that determines if no more shapes can move in the winCondition
-///     > Add a pulsating circle around the object at a scale slightly bigger than it
-///     > Bounce / stretch animation
-///     
-/// Add a reset for the level when losing / a UI to reset at anypoint
-///
-/// Have the outer blocks scale to the outline instead of placing them
-/// 
 /// ToDo:
-///
-/// Determine a good way for the pause menu to be opened (Maybe double tap screen? Hold? Press outline?)
-/// 
 /// Save / Load levels / packs / serialize this data out
 ///     > Send the data as json - properly serialize / deserialize the color, id, positions, shapes, shape ids, etc.
 /// 
-/// Add new shapes / check polygon colliders for accuracy (look for an online pack to keep scales equal) - Need a lot of uniform shapes for this)
-///
 /// Design a level editor
 ///     > Shape selection
 ///     > Allow prefabs (scale / color)
@@ -41,9 +26,15 @@ using UnityEngine;
 ///
 /// Title screen / load level / level editor
 ///     > Display level completions in each pack
-/// Bug:
+///     
+/// Bugs:
 ///
 /// Sometimes you get a lose state when you win (objects are not being removed fully - usually small yellow ones)
+///
+/// /// Future ToDo:
+/// Determine a good way for the pause menu to be opened (Maybe double tap screen? Hold? Press outline?)
+///
+/// /// Add new shapes / check polygon colliders for accuracy (look for an online pack to keep scales equal) - Need a lot of uniform shapes for this)
 /// </summary>
 
 public class ShapeScript : MonoBehaviour

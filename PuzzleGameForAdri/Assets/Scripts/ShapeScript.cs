@@ -3,17 +3,24 @@ using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
-/// ToDo:
+/// Done:
 /// Add a canMove flag where a player can or can't move an object
 ///     > Add a condition that determines if no more shapes can move in the winCondition
 ///     > Add a pulsating circle around the object at a scale slightly bigger than it
-///     > Bounce / stretch animation 
-/// 
+///     > Bounce / stretch animation
+///     
 /// Add a reset for the level when losing / a UI to reset at anypoint
 ///
 /// Have the outer blocks scale to the outline instead of placing them
+/// 
+/// ToDo:
 ///
-/// Add new shapes / check polygon colliders for accuracy (look for an online pack to keep scales equal)
+/// Determine a good way for the pause menu to be opened (Maybe double tap screen? Hold? Press outline?)
+/// 
+/// Save / Load levels / packs / serialize this data out
+///     > Send the data as json - properly serialize / deserialize the color, id, positions, shapes, shape ids, etc.
+/// 
+/// Add new shapes / check polygon colliders for accuracy (look for an online pack to keep scales equal) - Need a lot of uniform shapes for this)
 ///
 /// Design a level editor
 ///     > Shape selection
@@ -31,15 +38,12 @@ using UnityEngine;
 ///     > Load the pack / levels, add / move / remove levels from pack
 ///     > Add / remove packs (No duplicate names - append a number each time this occurs or just add a unique id)
 ///
-/// Save / Load levels / packs / serialize this data out
-///     > Send the data as json - properly serialize / deserialize the color, id, positions, shapes, shape ids, etc.
 ///
 /// Title screen / load level / level editor
 ///     > Display level completions in each pack
 /// Bug:
-/// Black or white shape hitting two shapes at once triggers them both
-///     > It should not work this way (It should only destroy one)
-/// Randomly the backgroundColor / shape index or scale will reset
+///
+/// Sometimes you get a lose state when you win (objects are not being removed fully - usually small yellow ones)
 /// </summary>
 
 public class ShapeScript : MonoBehaviour
@@ -89,7 +93,7 @@ public class ShapeScript : MonoBehaviour
             TogglePhysics(false);
 
             // assure each childed shape is on top of the parent
-            transform.position = new Vector3(transform.position.x, transform.position.y, -1f);
+            transform.localPosition = new Vector3(transform.localPosition.x, transform.localPosition.y, -1f);
             return;
         }
         
@@ -137,6 +141,12 @@ public class ShapeScript : MonoBehaviour
             ShapeScript shapeScript = collision.gameObject.GetComponent<ShapeScript>();
 
             if (shapeScript == default)
+            {
+                return;
+            }
+
+            // don't collide with an already expanded shape nor one that is expanding
+            if(IsExpanding || shapeScript.IsExpanding)
             {
                 return;
             }

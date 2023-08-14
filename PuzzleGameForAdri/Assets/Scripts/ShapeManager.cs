@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class ShapeManager : MonoBehaviour
 {
@@ -7,6 +8,7 @@ public class ShapeManager : MonoBehaviour
     [SerializeField] private GameObject _youWinText = null;
     [SerializeField] private GameObject _youLoseText = null;
     [SerializeField] private Camera _mainCam = null;
+    [SerializeField] private GameObject _replayUI = null;
 
     [SerializeField] private int _goalColor = -1;
     [SerializeField] private int _currentColor = -1;
@@ -19,7 +21,7 @@ public class ShapeManager : MonoBehaviour
     private int currentZIndex = 1;
 
     private const float BORDER_SCALE = 0.9f;
-    private const float BORDER_DISPLAY_ONSCREEN_PERCENT = 0.98f;
+    private const float BORDER_DISPLAY_ONSCREEN_PERCENT = 0.95f;
     public const int WHITE_INDEX = 0;
     public const int BLACK_INDEX = 1;
 
@@ -151,6 +153,8 @@ public class ShapeManager : MonoBehaviour
 
         _youWinText.transform.parent.gameObject.SetActive(true);
 
+        ToggleRestartUI(true);
+
         if(shapesLeft == 0 && _goalColor == _currentColor)
         {
             _youWinText.gameObject.SetActive(true);
@@ -158,5 +162,27 @@ public class ShapeManager : MonoBehaviour
         }
        
         _youLoseText.gameObject.SetActive(true);
+    }
+
+    private void Update()
+    {
+        // ToDo TJC: This is just for debugging remove this later - need a permanent solution for mobile
+        if(Input.GetKeyDown(KeyCode.Space))
+        {
+            ToggleRestartUI(true);
+        }
+    }
+
+    /// <summary>
+    /// ToDo TJC: Have this reload a serialized level not a level (save load, etc.)
+    /// </summary>
+    public void RestartActiveLevel()
+    {
+        SceneManager.LoadScene(0);
+    }
+
+    public void ToggleRestartUI(bool toggle)
+    {
+        _replayUI.SetActive(toggle);
     }
 }

@@ -31,7 +31,7 @@ public class DragAndDrop : MonoBehaviour
             return;
         }
 
-        RaycastHit2D hit = Physics2D.Raycast(GetMousePosition(), Vector2.down);
+        RaycastHit2D hit = Physics2D.Raycast(GetMousePosition(), Vector2.zero);
 
         if(hit == default || hit.collider.tag != "Shape")
         {

@@ -10,9 +10,9 @@ PuzzleGameForAdri/.vs/
 
 PuzzleGameForAdri/obj/
 
-*.csproj\
+*.csproj
 
-*.sln\
+*.sln
 
 PuzzleGameForAdri/Assets/StreamingAssets/data/
 

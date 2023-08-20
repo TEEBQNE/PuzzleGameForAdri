@@ -4,6 +4,7 @@ using UnityEngine;
 
 public class SaveLoadStructures
 {
+    [System.Serializable]
     public class LevelCompletion
     {
         public LevelCompletion(Guid userId, Guid levelGuid, bool isCompleted)
@@ -22,6 +23,7 @@ public class SaveLoadStructures
         private bool _isCompleted;
     }
 
+    [System.Serializable]
     public class LevelPackCompletion
     {
         public LevelPackCompletion(List<LevelCompletion> levelsCompleted)
@@ -34,6 +36,7 @@ public class SaveLoadStructures
         private List<LevelCompletion> _levelsCompleted = new List<LevelCompletion>();
     }
 
+    [System.Serializable]
     public class LevelPack
     {
         public LevelPack(List<Level> levels, string packname, string packAuthorName, string packDateAuthored)
@@ -60,54 +63,62 @@ public class SaveLoadStructures
             // background color, shapes, shape rotation, colors, etc.
     }
 
+    [System.Serializable]
     public class Level
     {
-        public Level(List<Shape> shapes, List<Color> shapeColors, int startingBackgroundColor, int goalBackgroundColor)
+        public Level()
         {
-            _shapes = shapes;
-            _shapeColors = shapeColors;
-            _startingBackgroundColor = startingBackgroundColor;
-            _goalBackgroundColor = goalBackgroundColor;
+            shapes = new List<Shape>();
+            shapeColors = new List<Color> { Color.white, Color.black };
+            startingBackgroundColor = 0;
+            goalBackgroundColor = 0;
         }
 
-        public List<Shape> Shapes => _shapes;
-        public List<Color> ShapeColors => _shapeColors;
-        public int StartingBackgroundColor => _startingBackgroundColor;
-        public int GoalBackgroundColor => _goalBackgroundColor;
+        public Level(List<Shape> childShapes, List<Color> colors, int startingColor, int goalColor)
+        {
+            shapes = childShapes;
+            shapeColors = colors;
+            startingBackgroundColor = startingColor;
+            goalBackgroundColor = goalColor;
+        }
 
-        private List<Shape> _shapes = new List<Shape>();
-        private List<Color> _shapeColors = new List<Color>();    // [0] has to be white and [1] has to be black
-        private int _startingBackgroundColor;
-        private int _goalBackgroundColor;
+        public List<Shape> shapes;
+        public List<Color> shapeColors;
+        public int startingBackgroundColor;
+        public int goalBackgroundColor;
     }
 
+    [System.Serializable]
     public class Shape
     {
-        public Shape(List<Shape> childShapes, Vector2 position, Vector2 scale, float rotation = 0.0f, int colorIndex = 0, int shapeIndex = 0, bool canBeMoved = true)
+        public Shape()
         {
-            _childShapes = childShapes;
-            _position = position;
-            _scale = scale;
-            _rotation = rotation;
-            _colorIndex = colorIndex;
-            _shapeIndex = shapeIndex;
-            _canBeMoved = canBeMoved;
+            childShapes = new List<int>();
+            position = Vector2.zero;
+            scale = Vector2.zero;
+            rotation = Quaternion.identity;
+            colorIndex = 0;
+            shapeIndex = ShapeNames.SQUARE;
+            canBeMoved = true;
         }
 
-        public List<Shape> ChildShapes => _childShapes;
-        public Vector2 Position => _position;
-        public Vector2 Scale => _scale;
-        public float Rotation => _rotation;
-        public int ColorIndex => _colorIndex;
-        public int ShapeIndex => _shapeIndex;
-        public bool CanBeMoved => _canBeMoved;
+        public Shape(List<int> shapes, Vector2 pos, Vector2 sz, Quaternion rot, int colIdx = 0, ShapeNames shapeIdx = 0, bool beMoved = true)
+        {
+            childShapes = shapes;
+            position = pos;
+            scale = sz;
+            rotation = rot;
+            colorIndex = colIdx;
+            shapeIndex = shapeIdx;
+            canBeMoved = beMoved;
+        }
 
-        public List<Shape> _childShapes = new List<Shape>();
-        private Vector2 _position;
-        private Vector2 _scale;
-        private float _rotation;
-        private int _colorIndex;
-        private int _shapeIndex;
-        private bool _canBeMoved;
+        public Vector2 position;
+        public Vector2 scale;
+        public Quaternion rotation;
+        public int colorIndex;
+        public ShapeNames shapeIndex;
+        public bool canBeMoved;
+        public List<int> childShapes;
     }
 }

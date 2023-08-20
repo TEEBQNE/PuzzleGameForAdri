@@ -2,8 +2,20 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
+public enum ShapeNames
+{
+    SQUARE,
+    CIRCLE,
+    DIAMOND
+}
+
 public class ShapeManager : MonoBehaviour
 {
+#if UNITY_EDITOR
+    [NamedArray(typeof(ShapeNames))]
+#endif
+    [SerializeField] private List<Sprite> ShapeSprites = new List<Sprite>();
+    [SerializeField] private GameObject ShapePrefab = null;
     [SerializeField] private List<ShapeScript> Shapes = new List<ShapeScript>();
     [SerializeField] private GameObject _youWinText = null;
     [SerializeField] private GameObject _youLoseText = null;
@@ -11,7 +23,9 @@ public class ShapeManager : MonoBehaviour
     [SerializeField] private GameObject _replayUI = null;
 
     [SerializeField] private int _goalColor = -1;
-    [SerializeField] private int _currentColor = -1;
+    [SerializeField] private int _startingColor = -1;
+
+    private int _currentColor = -1;
     [SerializeField] private List<SpriteRenderer> _borders = new List<SpriteRenderer>();
 
     [SerializeField] private List<Color> _roundColors = new List<Color>() { Color.white, Color.black };
@@ -29,6 +43,8 @@ public class ShapeManager : MonoBehaviour
 
     private void Start()
     {
+        _currentColor = _startingColor;
+
         _mainCam.backgroundColor = _roundColors[_currentColor];
 
         foreach(SpriteRenderer rend in _borders)
@@ -185,4 +201,77 @@ public class ShapeManager : MonoBehaviour
     {
         _replayUI.SetActive(toggle);
     }
+
+    #region Save / Load
+    public SaveLoadStructures.Level SaveLevelData()
+    {
+        return new SaveLoadStructures.Level(GetShapes(), _roundColors, _startingColor, _goalColor);
+    }
+
+    private List<SaveLoadStructures.Shape> GetShapes()
+    {
+        List<SaveLoadStructures.Shape> allShapeData = new List<SaveLoadStructures.Shape>();
+        HelperMethods.ResetIds();
+
+        // create an id match dictionary here
+        Dictionary<ShapeScript, int> shapeToId = new Dictionary<ShapeScript, int>();
+
+        foreach(ShapeScript shape in Shapes)
+        {
+            shapeToId.Add(shape, HelperMethods.GetNextId());
+        }
+
+        foreach(ShapeScript shape in Shapes)
+        {
+            SaveLoadStructures.Shape shapeData = shape.SaveShapeData(shapeToId);
+            allShapeData.Add(shapeData);
+        }
+
+        return allShapeData;
+    }
+
+    public void LoadLevelData(SaveLoadStructures.Level levelData)
+    {
+        Dictionary<int, ShapeScript> idToShape = new Dictionary<int, ShapeScript>();
+        HelperMethods.ResetIds();
+
+        _startingColor = levelData.startingBackgroundColor;
+        _goalColor = levelData.goalBackgroundColor;
+        _roundColors = levelData.shapeColors;
+
+        foreach (SaveLoadStructures.Shape shapeData in levelData.shapes)
+        {
+            int shapeIdx = HelperMethods.GetNextId();
+
+            ShapeScript shape = Instantiate(ShapePrefab).GetComponent<ShapeScript>();
+            Shapes.Add(shape);
+            idToShape.Add(shapeIdx, shape);
+            shape.LoadShapeData(shapeData);
+            shape.SetColor(_roundColors[shapeData.colorIndex]);
+            shape.SetShape(ShapeSprites[(int)shapeData.shapeIndex]);
+
+            // we set the shapesIdx here to the last idx to use later
+            shapeData.childShapes.Add(shapeIdx);
+        }
+
+        // iterate all shape data creating a dictionary 
+
+        foreach(SaveLoadStructures.Shape shapeData in levelData.shapes)
+        {
+            if(shapeData.childShapes == default || shapeData.childShapes.Count == 1)
+            {
+                continue;
+            }
+
+            // the actual shape idx is stored as the last idx
+            int shapeIdx = shapeData.childShapes[shapeData.childShapes.Count - 1];
+
+            for(int x = 0; x < shapeData.childShapes.Count - 1; ++x)
+            {
+                // we store the data as global so we keep its world position, rotation, etc. 
+                idToShape[shapeData.childShapes[x]].transform.SetParent(idToShape[shapeIdx].transform, true);
+            }
+        }
+    }
+    #endregion
 }

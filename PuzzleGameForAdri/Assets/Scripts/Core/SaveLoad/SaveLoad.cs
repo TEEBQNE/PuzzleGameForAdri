@@ -12,7 +12,7 @@ public enum SaveLoadFolderNames
 
 public enum SaveLoadFileNames
 {
-
+    INDIVIDUAL_LEVEL_DATA
 }
 
 /// <summary>

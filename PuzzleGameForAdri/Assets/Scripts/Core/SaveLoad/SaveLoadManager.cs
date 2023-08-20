@@ -52,11 +52,6 @@ public class SaveLoadManager : MonoBehaviour
 {
     [SerializeField] private List<SaveData> AllSceneSaveLoadData = new List<SaveData>();
 
-#if UNITY_EDITOR
-    [SerializeField] private string dataToEncryptOrDecrypt = "";
-    [SerializeField] private bool decrypt = true;
-#endif
-
     private bool ErrorThrownDoNotSave = false;
     private static ILogger logger = Debug.unityLogger;
 

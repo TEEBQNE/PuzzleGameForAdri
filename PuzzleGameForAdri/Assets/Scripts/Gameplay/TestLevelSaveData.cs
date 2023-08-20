@@ -1,31 +1,49 @@
+using UnityEngine;
+
 public class TestLevelSaveData : RequiresSaveLoad
 {
-    /*
-        In the shape manager need to have all shape sprites indexed
-        Need to have the shapeScript hold a ref to the Shape object that is passed upwards
-
-        Need to determine how I want the refs setup to hold what data
-
-        Overall manager [Shape Sprites]
-        Player driven manager [Colors (except for white / black), background / goal color index, all shape data]
-
-        Player driven shapes [Position, scale, shape index, color index, if movable]
-
-        Will need a new prefab that acts like the shapeScript but is not a gameObject
-     */
+    [SerializeField] private ShapeManager _shapeManager = null;
 
     public override void Load(SaveLoadFolderNames folder, SaveLoadFileNames file)
     {
-        throw new System.NotImplementedException();
+        _shapeManager.LoadLevelData(SaveLoad<SaveLoadStructures.Level>.Load(folder, file) ?? new SaveLoadStructures.Level());
     }
 
+    // ToDo TJC: Need to add a print to the manager which calls the child shapes
+    // Also need the prints in the child shapes
     public override void PrintCurrentSaveData()
     {
-        throw new System.NotImplementedException();
+        SaveLoadStructures.Level data = _shapeManager.SaveLevelData();
+
+        Debug.Log("Goal: " + data.goalBackgroundColor);
+        Debug.Log("Start: " + data.startingBackgroundColor);
+
+        string colors = "";
+
+        foreach(Color color in data.shapeColors)
+        {
+            colors += "Color: " + color + " ";
+        }
+
+        Debug.Log(colors);
+
+        foreach(SaveLoadStructures.Shape shapes in data.shapes)
+        {
+            Debug.Log("Position: " + shapes.position + " Scale: " + shapes.scale + " Rotation: " + shapes.rotation + " Color: " + shapes.colorIndex + " Shape Index: " + shapes.shapeIndex + " Can Move: " + shapes.canBeMoved);
+        }
     }
 
-    public override void Save(SaveLoadFolderNames folder, SaveLoadFileNames file, bool isCloudSave = false)
+    public override void Save(SaveLoadFolderNames folder, SaveLoadFileNames file)
     {
-        throw new System.NotImplementedException();
+        SaveLoad<SaveLoadStructures.Level>.Save(_shapeManager.SaveLevelData(), folder, file);
+    }
+
+    public void Update()
+    {
+        if(Input.GetKeyDown(KeyCode.Return))
+        {
+            PrintCurrentSaveData();
+        }
+
     }
 }

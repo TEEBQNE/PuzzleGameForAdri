@@ -2,6 +2,25 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
+/* General game flow
+        Load app
+            Set a username (generate a guid for the user + cache their screen resolution (this 'should' never change))
+            Reload the last level they had loaded (not exact state, just reload it) / based on pack guid / level index
+            Load homescreen
+                Settings
+                Level creator
+                    Shows all authored local packs (based on guid) - can load an existing level pack then update it
+                    Create a new pack
+                    Delete an existing pack
+                Level selector
+                    Shows all packs (authored or generated from sent info) - overall pack displays completion status
+                        Selecting a pack displays all levels and their completion status
+                Load pack data
+                    'New' packs or can load in an existing guid which will warn the player it will overwrite an existing save
+                     Should dynamically save the packData as guid.txt and have a separate file that uses the readable name + other data
+                        Guid text file saves the big chunky level data that we only need when we play that pack
+ */
+
 /// <summary>
 /// ToDo:
 /// Save / Load levels / packs / serialize this data out
@@ -17,6 +36,10 @@ using UnityEngine;
 ///     > Childing objects and lists
 ///     > Disable colliders at the time of editing (use triggers)
 ///         > If an OnTriggerStay is activated display an issue (as they should not start overlapping)
+///
+/// 
+/// 
+/// Save out resolution a level / pack was made on and scale the level to the new device (Stretch / squeeze objects)
 ///
 /// Level pack / creator
 ///     > Create a name of a pack
@@ -41,6 +64,7 @@ public class ShapeScript : MonoBehaviour
 {
     // ToDo TJC: Remove this as a serialize and have this be loaded
     [SerializeField] private int _colorIndex = 0;
+    [SerializeField] private ShapeNames _shapeIndex;
     [SerializeField] private SpriteRenderer _render = null;
     [SerializeField] private Rigidbody2D _rb = null;
     [SerializeField] private PolygonCollider2D _collider = null;
@@ -79,7 +103,7 @@ public class ShapeScript : MonoBehaviour
     #region Init
     private void Start()
     {
-        if (transform.parent.GetComponent<ShapeScript>() != default)
+        if (transform.parent != default && transform.parent.GetComponent<ShapeScript>() != default)
         {
             TogglePhysics(false);
 
@@ -87,8 +111,9 @@ public class ShapeScript : MonoBehaviour
             transform.localPosition = new Vector3(transform.localPosition.x, transform.localPosition.y, -1f);
             return;
         }
-        
-        // ToDo TJC: Should children shapes inherit their parent moveable status?
+
+        // everything starts with colliders off so enable a non parented object here
+        _collider.enabled = true;
 
         InitializePulsator();
     }
@@ -305,7 +330,7 @@ public class ShapeScript : MonoBehaviour
     }
     #endregion
 
-    #region Change Color
+    #region Change Color / Change Shape
     private void HandleColorInteraction(ShapeScript otherShapeScript)
     {
         if (otherShapeScript.ColorIndex == ShapeManager.BLACK_INDEX || _colorIndex == ShapeManager.BLACK_INDEX)
@@ -366,6 +391,12 @@ public class ShapeScript : MonoBehaviour
 
         _colorIndex = overrideIndex;
     }
+
+    public void SetShape(Sprite sprite)
+    {
+        _render.sprite = sprite;
+        _collider.TryUpdateShapeToAttachedSprite();
+    }
     #endregion
 
     #region Update Physics
@@ -384,6 +415,44 @@ public class ShapeScript : MonoBehaviour
     {
         _rb.velocity = Vector2.zero;
         _rb.angularVelocity = 0.0f;
+    }
+    #endregion
+
+    #region Save / Load
+    public SaveLoadStructures.Shape SaveShapeData(Dictionary<ShapeScript, int> idRefs)
+    {
+        
+        return new SaveLoadStructures.Shape(GetChildShapes(idRefs), transform.position, transform.lossyScale, transform.rotation, _colorIndex, _shapeIndex, _canBeMoved);
+    }
+
+    private List<int> GetChildShapes(Dictionary<ShapeScript, int> idRefs)
+    {
+        List<int> shapes = new List<int>();
+
+        foreach(Transform trans in transform)
+        {
+            ShapeScript shape = trans.GetComponent<ShapeScript>();
+
+            if(shape == default)
+            {
+                continue;
+            }
+
+            shapes.Add(idRefs[shape]);
+        }
+
+        return shapes;
+    }
+
+    public void LoadShapeData(SaveLoadStructures.Shape shapeData)
+    {
+        transform.position = shapeData.position;
+        transform.localScale = shapeData.scale;
+        transform.rotation = shapeData.rotation;
+
+        _canBeMoved = shapeData.canBeMoved;
+        _colorIndex = shapeData.colorIndex;
+        _shapeIndex = shapeData.shapeIndex;
     }
     #endregion
 }

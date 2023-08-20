@@ -117,11 +117,6 @@ public class ShapeManager : MonoBehaviour
 
         foreach(ShapeScript shape in Shapes)
         {
-            if(shape == currentShape)
-            {
-                continue;
-            }
-
             if(shape.IsExpanding)
             {
                 return;

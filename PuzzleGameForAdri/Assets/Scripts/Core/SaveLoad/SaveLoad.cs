@@ -4,6 +4,7 @@ using System.IO;
 using System.Text;
 using System.Collections.Generic;
 
+// ToDo TJC: Do we want a folder that is just for level data? Where we save each pack / level as a guid.txt?
 public enum SaveLoadFolderNames
 {
     PERSISTENT_DATA_FOLDER,
@@ -12,7 +13,8 @@ public enum SaveLoadFolderNames
 
 public enum SaveLoadFileNames
 {
-    INDIVIDUAL_LEVEL_DATA
+    INDIVIDUAL_LEVEL_DATA,
+    PLAYER_USER_DATA
 }
 
 /// <summary>

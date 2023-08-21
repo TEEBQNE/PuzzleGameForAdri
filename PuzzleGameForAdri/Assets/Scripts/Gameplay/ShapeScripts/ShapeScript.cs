@@ -23,8 +23,8 @@ using UnityEngine;
 
 /// <summary>
 /// ToDo:
-/// Save / Load levels / packs / serialize this data out
-///     > Send the data as json - properly serialize / deserialize the color, id, positions, shapes, shape ids, etc.
+///
+/// Do the rest of the flow + save / load for packs first (?) - prolly this
 /// 
 /// Design a level editor
 ///     > Shape selection
@@ -38,8 +38,7 @@ using UnityEngine;
 ///         > If an OnTriggerStay is activated display an issue (as they should not start overlapping)
 ///
 /// 
-/// 
-/// Save out resolution a level / pack was made on and scale the level to the new device (Stretch / squeeze objects)
+/// Save out resolution a level / pack was made on and scale the level to the new device (Stretch / squeeze objects) - do I want this? Maybe a stretch?
 ///
 /// Level pack / creator
 ///     > Create a name of a pack

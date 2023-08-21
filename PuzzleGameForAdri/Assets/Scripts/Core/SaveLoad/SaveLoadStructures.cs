@@ -5,59 +5,72 @@ using UnityEngine;
 public class SaveLoadStructures
 {
     [System.Serializable]
-    public class LevelCompletion
+    public class PlayerUserData
     {
-        public LevelCompletion(Guid userId, Guid levelGuid, bool isCompleted)
+        public PlayerUserData()
         {
-            _levelGuid = levelGuid;
-            _isCompleted = isCompleted;
-            _userId = userId;
+            userId = "";
+            username = "";
         }
 
-        public Guid LevelGuid => _levelGuid;
-        public Guid UserId => _userId;
-        public bool IsCompleted => _isCompleted;
+        public PlayerUserData(string id, string user)
+        {
+            userId = id;
+            username = user;
+        }
 
-        private Guid _levelGuid;
-        private Guid _userId;
-        private bool _isCompleted;
+        public string userId;
+        public string username;
+    }
+
+    [System.Serializable]
+    public class LevelCompletion
+    {
+        public LevelCompletion(string id, string guid, bool completed)
+        {
+            levelGuid = id;
+            isCompleted = completed;
+            userId = guid;
+        }
+
+        public string levelGuid;
+        public string userId;
+        public bool isCompleted;
     }
 
     [System.Serializable]
     public class LevelPackCompletion
     {
-        public LevelPackCompletion(List<LevelCompletion> levelsCompleted)
+        public LevelPackCompletion()
         {
-            _levelsCompleted = levelsCompleted;
+            levelsCompleted = new List<LevelCompletion>();
         }
 
-        public List<LevelCompletion> LevelsCompleted => _levelsCompleted;
+        public LevelPackCompletion(List<LevelCompletion> completed)
+        {
+            levelsCompleted = completed;
+        }
 
-        private List<LevelCompletion> _levelsCompleted = new List<LevelCompletion>();
+        public List<LevelCompletion> levelsCompleted = new List<LevelCompletion>();
     }
 
     [System.Serializable]
     public class LevelPack
     {
-        public LevelPack(List<Level> levels, string packname, string packAuthorName, string packDateAuthored)
+        public LevelPack(List<Level> lvls, string pack, string authorName, string dateAuthored, string id)
         {
-            _levels = levels;
-            _packName = packname;
-            _packAuthorName = packAuthorName;
-            _packDateAuthored = packDateAuthored;
+            levels = lvls;
+            packName = pack;
+            packAuthorName = authorName;
+            packDateAuthored = dateAuthored;
+            creatorId = id;
         }
 
-        public List<Level> Levels => _levels;
-        public string PackName => _packName;
-        public string PackAuthorName => _packAuthorName;
-        public string PackDateAuthored => _packDateAuthored;
-        public Guid CreatorId => _creatorId;
-
-        private List<Level> _levels = new List<Level>();
-        private string _packName;
-        private string _packAuthorName;
-        private string _packDateAuthored;
-        private Guid _creatorId;
+        public List<Level> levels = new List<Level>();
+        public string packName;
+        public string packAuthorName;
+        public string packDateAuthored;
+        public string creatorId;
 
         // do we want basic design for the pack (?) A - non moving level can be used for the background?
             // background color, shapes, shape rotation, colors, etc.

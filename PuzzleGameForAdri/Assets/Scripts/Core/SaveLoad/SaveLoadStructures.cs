@@ -85,20 +85,25 @@ public class SaveLoadStructures
             shapeColors = new List<Color> { Color.white, Color.black };
             startingBackgroundColor = 0;
             goalBackgroundColor = 0;
+            screenResolution = new Vector2(Screen.width, Screen.height);
         }
 
-        public Level(List<Shape> childShapes, List<Color> colors, int startingColor, int goalColor)
+        public Level(List<Shape> childShapes, List<Color> colors, int startingColor, int goalColor, Vector2 resolution)
         {
             shapes = childShapes;
             shapeColors = colors;
             startingBackgroundColor = startingColor;
             goalBackgroundColor = goalColor;
+            screenResolution = resolution;
         }
 
         public List<Shape> shapes;
         public List<Color> shapeColors;
         public int startingBackgroundColor;
         public int goalBackgroundColor;
+
+        // this should be moved to 
+        public Vector2 screenResolution;
     }
 
     [System.Serializable]

@@ -51,6 +51,8 @@ using UnityEngine;
 ///     
 /// Bugs:
 ///
+/// If you start a color out as the goal, the shape does not get destroyed (It probably should just auto delete)
+/// 
 /// Sometimes you get a lose state when you win (objects are not being removed fully - usually small yellow ones)
 ///
 /// /// Future ToDo:
@@ -69,6 +71,7 @@ public class ShapeScript : MonoBehaviour
     [SerializeField] private PolygonCollider2D _collider = null;
     [SerializeField] private GameObject _pulsatingPrefab = null;
     [SerializeField] private bool _canBeMoved = true;
+    [SerializeField] private bool _isEditor = false;
 
     private const int MAX_SCALE = 50;
     private Vector3 MAX_SCALE_VECTOR = new Vector3(MAX_SCALE, MAX_SCALE, MAX_SCALE);
@@ -102,6 +105,12 @@ public class ShapeScript : MonoBehaviour
     #region Init
     private void Start()
     {
+        if(_isEditor)
+        {
+            TogglePhysics(false);
+            return;
+        }
+
         if (transform.parent != default && transform.parent.GetComponent<ShapeScript>() != default)
         {
             TogglePhysics(false);

@@ -154,3 +154,4 @@ MonoBehaviour:
   _collider: {fileID: 2967448921320488944}
   _pulsatingPrefab: {fileID: 7279509844331110791, guid: d40010285be61438fa4dec7e2118b7b0, type: 3}
   _canBeMoved: 1
+  _isEditor: 0

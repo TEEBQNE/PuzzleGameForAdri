@@ -81,16 +81,16 @@ public class ShapeManager : MonoBehaviour
 
         // top -> bottom -> left -> right
         _borders[0].transform.localScale = new Vector3(scaleFactorX, scaleFactorY * BORDER_SCALE, 1f);
-        _borders[0].transform.localPosition = new Vector3(0f, topRightCorner.y + (_borders[0].bounds.extents.y * BORDER_DISPLAY_ONSCREEN_PERCENT), -2f);
+        _borders[0].transform.localPosition = new Vector3(_borders[0].bounds.extents.x / 2f, topRightCorner.y + (_borders[0].bounds.extents.y * BORDER_DISPLAY_ONSCREEN_PERCENT), -2f);
 
         _borders[1].transform.localScale = new Vector3(scaleFactorX, scaleFactorY * BORDER_SCALE, 1f);
-        _borders[1].transform.localPosition = new Vector3(0f, -topRightCorner.y - (_borders[0].bounds.extents.y * BORDER_DISPLAY_ONSCREEN_PERCENT), -2f);
+        _borders[1].transform.localPosition = new Vector3(_borders[0].bounds.extents.x / 2f, -_borders[0].bounds.extents.y * BORDER_DISPLAY_ONSCREEN_PERCENT, -2f);
 
         _borders[2].transform.localScale = new Vector3(scaleFactorY * BORDER_SCALE, scaleFactorY, 1f);
-        _borders[2].transform.localPosition = new Vector3(-topRightCorner.x - (_borders[2].bounds.extents.x * BORDER_DISPLAY_ONSCREEN_PERCENT), 0f, -2f);
+        _borders[2].transform.localPosition = new Vector3(-_borders[2].bounds.extents.x * BORDER_DISPLAY_ONSCREEN_PERCENT, _borders[2].bounds.extents.x / 2f, -2f);
 
         _borders[3].transform.localScale = new Vector3(scaleFactorY * BORDER_SCALE, scaleFactorY, 1f);
-        _borders[3].transform.localPosition = new Vector3(topRightCorner.x + (_borders[2].bounds.extents.x * BORDER_DISPLAY_ONSCREEN_PERCENT), 0f, -2f);
+        _borders[3].transform.localPosition = new Vector3(topRightCorner.x + (_borders[2].bounds.extents.x * BORDER_DISPLAY_ONSCREEN_PERCENT), _borders[2].bounds.extents.x / 2f, -2f);
     }
 
     public int ExpandCallback(int colorIndex, ShapeScript shape)
@@ -200,13 +200,20 @@ public class ShapeManager : MonoBehaviour
     #region Save / Load
     public SaveLoadStructures.Level SaveLevelData()
     {
-        return new SaveLoadStructures.Level(GetShapes(), _roundColors, _startingColor, _goalColor);
+        // due to camera being bottom left aligned the size is the screen in world space
+        float height = _mainCam.orthographicSize * 2;
+        float width = height * _mainCam.aspect;
+
+        return new SaveLoadStructures.Level(GetShapes(), _roundColors, _startingColor, _goalColor, new Vector2(width, height));
     }
 
     private List<SaveLoadStructures.Shape> GetShapes()
     {
         List<SaveLoadStructures.Shape> allShapeData = new List<SaveLoadStructures.Shape>();
         HelperMethods.ResetIds();
+
+        float height = _mainCam.orthographicSize * 2;
+        float width = height * _mainCam.aspect;
 
         // create an id match dictionary here
         Dictionary<ShapeScript, int> shapeToId = new Dictionary<ShapeScript, int>();
@@ -219,6 +226,8 @@ public class ShapeManager : MonoBehaviour
         foreach(ShapeScript shape in Shapes)
         {
             SaveLoadStructures.Shape shapeData = shape.SaveShapeData(shapeToId);
+            shapeData.position = new Vector2(shapeData.position.x / width, shapeData.position.y / height);
+            shapeData.scale = new Vector2(shapeData.scale.x / width, shapeData.scale.y / height);
             allShapeData.Add(shapeData);
         }
 
@@ -242,6 +251,12 @@ public class ShapeManager : MonoBehaviour
             Shapes.Add(shape);
             idToShape.Add(shapeIdx, shape);
             shape.LoadShapeData(shapeData);
+
+            // as the camera is aligned at (0,0) we will use the camera size in world space as its height / width
+            float height = _mainCam.orthographicSize * 2;
+            float width = height * _mainCam.aspect;
+
+            shape.transform.UpdateScaleToFitResolution(_mainCam, levelData.screenResolution, new Vector2(width, height));
             shape.SetColor(_roundColors[shapeData.colorIndex]);
             shape.SetShape(ShapeSprites[(int)shapeData.shapeIndex]);
 

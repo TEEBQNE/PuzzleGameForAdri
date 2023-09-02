@@ -34,7 +34,7 @@ public class ShapeManager : MonoBehaviour
 
     private int currentZIndex = 1;
 
-    private const float BORDER_SCALE = 0.9f;
+    private const float BORDER_SCALE = 1.0f;
     private const float BORDER_DISPLAY_ONSCREEN_PERCENT = 0.95f;
     public const int WHITE_INDEX = 0;
     public const int BLACK_INDEX = 1;
@@ -80,10 +80,10 @@ public class ShapeManager : MonoBehaviour
         var scaleFactorY = worldSpaceHeight / spriteSize.y;
 
         // top -> bottom -> left -> right
-        _borders[0].transform.localScale = new Vector3(scaleFactorX, scaleFactorY * BORDER_SCALE, 1f);
+        _borders[0].transform.localScale = new Vector3(scaleFactorX, scaleFactorX * BORDER_SCALE, 1f);
         _borders[0].transform.localPosition = new Vector3(_borders[0].bounds.extents.x / 2f, topRightCorner.y + (_borders[0].bounds.extents.y * BORDER_DISPLAY_ONSCREEN_PERCENT), -2f);
 
-        _borders[1].transform.localScale = new Vector3(scaleFactorX, scaleFactorY * BORDER_SCALE, 1f);
+        _borders[1].transform.localScale = new Vector3(scaleFactorX, scaleFactorX * BORDER_SCALE, 1f);
         _borders[1].transform.localPosition = new Vector3(_borders[0].bounds.extents.x / 2f, -_borders[0].bounds.extents.y * BORDER_DISPLAY_ONSCREEN_PERCENT, -2f);
 
         _borders[2].transform.localScale = new Vector3(scaleFactorY * BORDER_SCALE, scaleFactorY, 1f);
@@ -91,6 +91,22 @@ public class ShapeManager : MonoBehaviour
 
         _borders[3].transform.localScale = new Vector3(scaleFactorY * BORDER_SCALE, scaleFactorY, 1f);
         _borders[3].transform.localPosition = new Vector3(topRightCorner.x + (_borders[2].bounds.extents.x * BORDER_DISPLAY_ONSCREEN_PERCENT), _borders[2].bounds.extents.x / 2f, -2f);
+
+        float xDiff = scaleFactorY * BORDER_SCALE * (1.0f - BORDER_DISPLAY_ONSCREEN_PERCENT) * 0.5f;
+        float yDiff = scaleFactorX * BORDER_SCALE * (1.0f - BORDER_DISPLAY_ONSCREEN_PERCENT) * 0.5f;
+
+        Vector3 posDiff = new Vector3(xDiff, yDiff, 0f);
+
+        foreach(var border in _borders)
+        {
+            border.transform.localPosition -= posDiff;
+        }
+
+        // transform to add to get to our 'true' 0,0 point with boarders added from the transform of our camera
+        _mainCam.transform.position -= posDiff;
+
+        Debug.Log("Old Bounds: (" + worldSpaceWidth + ", " + worldSpaceHeight + ")");
+        Debug.Log("New Bounds: (" + (worldSpaceWidth - ((worldSpaceWidth * 2f * (1.0f - BORDER_DISPLAY_ONSCREEN_PERCENT))) + ", " + (worldSpaceHeight - (worldSpaceHeight * 2f * (1.0f - BORDER_DISPLAY_ONSCREEN_PERCENT))) + ")"));
     }
 
     public int ExpandCallback(int colorIndex, ShapeScript shape)

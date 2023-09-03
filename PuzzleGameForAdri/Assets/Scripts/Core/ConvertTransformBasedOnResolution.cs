@@ -27,31 +27,31 @@ public static class TransformExtensions
 
     public static void UpdateScaleToFitResolution(this Transform transform, Camera cam, Vector2 goalResolution, Vector2 currentResolution)
     {
-        float goalXPos = transform.position.x * goalResolution.x;
-        float goalYpos = transform.position.y * goalResolution.y;
-        float goalPosRatio = goalXPos / goalYpos;
+        //float goalXPos = transform.position.x * goalResolution.x;
+        //float goalYpos = transform.position.y * goalResolution.y;
+        //float goalPosRatio = goalXPos / goalYpos;
 
-        float goalXScale = transform.lossyScale.x * goalResolution.x;
-        float goalYScale = transform.lossyScale.y * goalResolution.y;
-        float goalScaleRatio = goalXScale / goalYScale;
+        //float goalXScale = transform.lossyScale.x * goalResolution.x;
+        //float goalYScale = transform.lossyScale.y * goalResolution.y;
+        //float goalScaleRatio = goalXScale / goalYScale;
 
         float currentXPos = transform.position.x * currentResolution.x;
         float currentYPos = transform.position.y * currentResolution.y;
-        float currentPosRatio = currentXPos / currentYPos;
+        //float currentPosRatio = currentXPos / currentYPos;
 
         float currentXScale = transform.lossyScale.x * currentResolution.x;
         float currentYScale = transform.lossyScale.y * currentResolution.y;
-        float currentScaleRatio = currentXScale / currentYScale;
+        //float currentScaleRatio = currentXScale / currentYScale;
 
         // calculate the % difference - if the difference is too large, we need to calculate the position as a relative aspect ratio
         // to maintain relative positioning instead
-        float diffXPos = Mathf.Abs(goalXPos - currentXPos) / ((goalXPos + currentXPos) / 2) * 100;
-        float diffYPos = Mathf.Abs(goalYpos - currentYPos) / ((goalYpos + currentYPos) / 2) * 100;
-        float diffRatioPos = Mathf.Abs(goalPosRatio - currentPosRatio) / ((goalPosRatio + currentPosRatio) / 2) * 100;
-
-        float diffXScale = Mathf.Abs(goalXScale - currentXScale) / ((goalXScale + currentYScale) / 2) * 100;
-        float diffYScale = Mathf.Abs(goalYScale - currentYScale) / ((currentYScale + currentXScale) / 2) * 100;
-        float diffRatioScale = Mathf.Abs(goalScaleRatio - currentScaleRatio) / ((goalScaleRatio + currentScaleRatio) / 2) * 100;
+        //float diffXPos = Mathf.Abs(goalXPos - currentXPos) / ((goalXPos + currentXPos) / 2) * 100;
+        //float diffYPos = Mathf.Abs(goalYpos - currentYPos) / ((goalYpos + currentYPos) / 2) * 100;
+        //float diffRatioPos = Mathf.Abs(goalPosRatio - currentPosRatio) / ((goalPosRatio + currentPosRatio) / 2) * 100;
+        //
+        //float diffXScale = Mathf.Abs(goalXScale - currentXScale) / ((goalXScale + currentYScale) / 2) * 100;
+        //float diffYScale = Mathf.Abs(goalYScale - currentYScale) / ((currentYScale + currentXScale) / 2) * 100;
+        //float diffRatioScale = Mathf.Abs(goalScaleRatio - currentScaleRatio) / ((goalScaleRatio + currentScaleRatio) / 2) * 100;
 
         // ToDo TJC: Need to make it so when we have a aspect ratio change, we need to make the current screen fit the goal aspect
         // by spawning in black bars on the top / bottom so we maintain the exact same aspect ratio
@@ -73,18 +73,18 @@ public static class TransformExtensions
         //    }
         //}
 
-        if(diffRatioScale >= MAX_SCALE_DIFF)
-        {
-            // need to adjust scale based on ratio
-            if (diffXScale > diffYScale)
-            {
-                currentYScale = currentXScale * (goalYScale / goalXScale);
-            }
-            else
-            {
-                currentXScale = currentYScale * (goalXScale / goalYScale);
-            }
-        }
+        //if(diffRatioScale >= MAX_SCALE_DIFF)
+        //{
+        //    // need to adjust scale based on ratio
+        //    if (diffXScale > diffYScale)
+        //    {
+        //        currentYScale = currentXScale * (goalYScale / goalXScale);
+        //    }
+        //    else
+        //    {
+        //        currentXScale = currentYScale * (goalXScale / goalYScale);
+        //    }
+        //}
 
         transform.position = new Vector3(currentXPos, currentYPos, transform.position.z);
         transform.localScale = new Vector3(currentXScale, currentYScale, 1f);

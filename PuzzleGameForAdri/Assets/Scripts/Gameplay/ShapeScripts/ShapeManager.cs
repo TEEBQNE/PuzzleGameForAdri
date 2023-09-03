@@ -34,6 +34,8 @@ public class ShapeManager : MonoBehaviour
 
     private int currentZIndex = 1;
 
+    private Vector2 _adjustedScreenResolution = Vector2.zero;
+
     private const float BORDER_SCALE = 1.0f;
     private const float BORDER_DISPLAY_ONSCREEN_PERCENT = 0.95f;
     public const int WHITE_INDEX = 0;
@@ -52,7 +54,11 @@ public class ShapeManager : MonoBehaviour
             rend.color = _roundColors[_goalColor];
         }
 
-        SetBorderScaleAndPosition();
+        // when we are building a new level we need to adjust it to the user's aspect ratio without any goal
+        if(_adjustedScreenResolution == Vector2.zero)
+        {
+            SetBorderScaleAndPosition(Vector2.zero);
+        }
 
         // we descend z layers here so they do not stack
         currentZIndex = Shapes.Count * 3;
@@ -62,51 +68,6 @@ public class ShapeManager : MonoBehaviour
             shape.SetColor(_roundColors[shape.ColorIndex]);
             shape.SetCallback(ExpandCallback, GetCurrentBackground, EvaluateWinCondition);
         }
-    }
-
-    private void SetBorderScaleAndPosition()
-    {
-        // grab screen size
-        var topRightCorner = _mainCam.ScreenToWorldPoint(new Vector3(Screen.width, Screen.height, _mainCam.transform.position.z));
-        var worldSpaceWidth = topRightCorner.x * 2;
-        var worldSpaceHeight = topRightCorner.y * 2;
-
-        var spriteSize = _borders[0].bounds.size;
-
-        // scale our X to stretch to this value
-        var scaleFactorX = worldSpaceWidth / spriteSize.x;
-
-        // scale our Y to stretch to this value
-        var scaleFactorY = worldSpaceHeight / spriteSize.y;
-
-        // top -> bottom -> left -> right
-        _borders[0].transform.localScale = new Vector3(scaleFactorX, scaleFactorX * BORDER_SCALE, 1f);
-        _borders[0].transform.localPosition = new Vector3(_borders[0].bounds.extents.x / 2f, topRightCorner.y + (_borders[0].bounds.extents.y * BORDER_DISPLAY_ONSCREEN_PERCENT), -2f);
-
-        _borders[1].transform.localScale = new Vector3(scaleFactorX, scaleFactorX * BORDER_SCALE, 1f);
-        _borders[1].transform.localPosition = new Vector3(_borders[0].bounds.extents.x / 2f, -_borders[0].bounds.extents.y * BORDER_DISPLAY_ONSCREEN_PERCENT, -2f);
-
-        _borders[2].transform.localScale = new Vector3(scaleFactorY * BORDER_SCALE, scaleFactorY, 1f);
-        _borders[2].transform.localPosition = new Vector3(-_borders[2].bounds.extents.x * BORDER_DISPLAY_ONSCREEN_PERCENT, _borders[2].bounds.extents.x / 2f, -2f);
-
-        _borders[3].transform.localScale = new Vector3(scaleFactorY * BORDER_SCALE, scaleFactorY, 1f);
-        _borders[3].transform.localPosition = new Vector3(topRightCorner.x + (_borders[2].bounds.extents.x * BORDER_DISPLAY_ONSCREEN_PERCENT), _borders[2].bounds.extents.x / 2f, -2f);
-
-        float xDiff = scaleFactorY * BORDER_SCALE * (1.0f - BORDER_DISPLAY_ONSCREEN_PERCENT) * 0.5f;
-        float yDiff = scaleFactorX * BORDER_SCALE * (1.0f - BORDER_DISPLAY_ONSCREEN_PERCENT) * 0.5f;
-
-        Vector3 posDiff = new Vector3(xDiff, yDiff, 0f);
-
-        foreach(var border in _borders)
-        {
-            border.transform.localPosition -= posDiff;
-        }
-
-        // transform to add to get to our 'true' 0,0 point with boarders added from the transform of our camera
-        _mainCam.transform.position -= posDiff;
-
-        Debug.Log("Old Bounds: (" + worldSpaceWidth + ", " + worldSpaceHeight + ")");
-        Debug.Log("New Bounds: (" + (worldSpaceWidth - ((worldSpaceWidth * 2f * (1.0f - BORDER_DISPLAY_ONSCREEN_PERCENT))) + ", " + (worldSpaceHeight - (worldSpaceHeight * 2f * (1.0f - BORDER_DISPLAY_ONSCREEN_PERCENT))) + ")"));
     }
 
     public int ExpandCallback(int colorIndex, ShapeScript shape)
@@ -216,11 +177,7 @@ public class ShapeManager : MonoBehaviour
     #region Save / Load
     public SaveLoadStructures.Level SaveLevelData()
     {
-        // due to camera being bottom left aligned the size is the screen in world space
-        float height = _mainCam.orthographicSize * 2;
-        float width = height * _mainCam.aspect;
-
-        return new SaveLoadStructures.Level(GetShapes(), _roundColors, _startingColor, _goalColor, new Vector2(width, height));
+        return new SaveLoadStructures.Level(GetShapes(), _roundColors, _startingColor, _goalColor, _adjustedScreenResolution);
     }
 
     private List<SaveLoadStructures.Shape> GetShapes()
@@ -259,6 +216,9 @@ public class ShapeManager : MonoBehaviour
         _goalColor = levelData.goalBackgroundColor;
         _roundColors = levelData.shapeColors;
 
+        // scale our bounds to properly be set relative to our screen space and to have our borders be adjusted
+        SetBorderScaleAndPosition(levelData.screenResolution);
+
         foreach (SaveLoadStructures.Shape shapeData in levelData.shapes)
         {
             int shapeIdx = HelperMethods.GetNextId();
@@ -268,11 +228,7 @@ public class ShapeManager : MonoBehaviour
             idToShape.Add(shapeIdx, shape);
             shape.LoadShapeData(shapeData);
 
-            // as the camera is aligned at (0,0) we will use the camera size in world space as its height / width
-            float height = _mainCam.orthographicSize * 2;
-            float width = height * _mainCam.aspect;
-
-            shape.transform.UpdateScaleToFitResolution(_mainCam, levelData.screenResolution, new Vector2(width, height));
+            shape.transform.UpdateScaleToFitResolution(_mainCam, levelData.screenResolution, _adjustedScreenResolution);
             shape.SetColor(_roundColors[shapeData.colorIndex]);
             shape.SetShape(ShapeSprites[(int)shapeData.shapeIndex]);
 
@@ -298,6 +254,51 @@ public class ShapeManager : MonoBehaviour
                 idToShape[shapeData.childShapes[x]].transform.SetParent(idToShape[shapeIdx].transform, true);
             }
         }
+    }
+
+    private void SetBorderScaleAndPosition(Vector2 goalAspectRatio)
+    {
+        // grab screen size
+        var topRightCorner = _mainCam.ScreenToWorldPoint(new Vector3(Screen.width, Screen.height, _mainCam.transform.position.z));
+        var worldSpaceWidth = topRightCorner.x * 2;
+        var worldSpaceHeight = topRightCorner.y * 2;
+
+        var spriteSize = _borders[0].bounds.size;
+
+        // scale our X to stretch to this value
+        var scaleFactorX = worldSpaceWidth / spriteSize.x;
+
+        // scale our Y to stretch to this value
+        var scaleFactorY = worldSpaceHeight / spriteSize.y;
+
+        // top -> bottom -> left -> right
+        _borders[0].transform.localScale = new Vector3(scaleFactorX, scaleFactorX * BORDER_SCALE, 1f);
+        _borders[0].transform.localPosition = new Vector3(_borders[0].bounds.extents.x / 2f, topRightCorner.y + (_borders[0].bounds.extents.y * BORDER_DISPLAY_ONSCREEN_PERCENT), -2f);
+
+        _borders[1].transform.localScale = new Vector3(scaleFactorX, scaleFactorX * BORDER_SCALE, 1f);
+        _borders[1].transform.localPosition = new Vector3(_borders[0].bounds.extents.x / 2f, -_borders[0].bounds.extents.y * BORDER_DISPLAY_ONSCREEN_PERCENT, -2f);
+
+        _borders[2].transform.localScale = new Vector3(scaleFactorY * BORDER_SCALE, scaleFactorY, 1f);
+        _borders[2].transform.localPosition = new Vector3(-_borders[2].bounds.extents.x * BORDER_DISPLAY_ONSCREEN_PERCENT, _borders[2].bounds.extents.x / 2f, -2f);
+
+        _borders[3].transform.localScale = new Vector3(scaleFactorY * BORDER_SCALE, scaleFactorY, 1f);
+        _borders[3].transform.localPosition = new Vector3(topRightCorner.x + (_borders[2].bounds.extents.x * BORDER_DISPLAY_ONSCREEN_PERCENT), _borders[2].bounds.extents.x / 2f, -2f);
+
+        float xDiff = scaleFactorY * BORDER_SCALE * (1.0f - BORDER_DISPLAY_ONSCREEN_PERCENT) * 0.5f;
+        float yDiff = scaleFactorX * BORDER_SCALE * (1.0f - BORDER_DISPLAY_ONSCREEN_PERCENT) * 0.5f;
+
+        Vector3 posDiff = new Vector3(xDiff, yDiff, 0f);
+
+        foreach (var border in _borders)
+        {
+            border.transform.localPosition -= posDiff;
+        }
+
+        // transform to add to get to our 'true' 0,0 point with boarders added from the transform of our camera
+        _mainCam.transform.position -= posDiff;
+        _adjustedScreenResolution = new Vector2(worldSpaceWidth - (worldSpaceWidth * 2f * (1.0f - BORDER_DISPLAY_ONSCREEN_PERCENT)), worldSpaceHeight - (worldSpaceHeight * 2f * (1.0f - BORDER_DISPLAY_ONSCREEN_PERCENT)));
+
+
     }
     #endregion
 }

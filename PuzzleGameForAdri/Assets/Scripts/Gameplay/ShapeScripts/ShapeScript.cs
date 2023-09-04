@@ -318,6 +318,11 @@ public class ShapeScript : MonoBehaviour
 
         foreach (Transform child in transform)
         {
+            if(child == transform)
+            {
+                continue;
+            }
+
             ShapeScript shape = child.GetComponent<ShapeScript>();
             shapes.Add(shape);
 
@@ -429,7 +434,6 @@ public class ShapeScript : MonoBehaviour
     #region Save / Load
     public SaveLoadStructures.Shape SaveShapeData(Dictionary<ShapeScript, int> idRefs)
     {
-        
         return new SaveLoadStructures.Shape(GetChildShapes(idRefs), transform.position, transform.lossyScale, transform.rotation, _colorIndex, _shapeIndex, _canBeMoved);
     }
 

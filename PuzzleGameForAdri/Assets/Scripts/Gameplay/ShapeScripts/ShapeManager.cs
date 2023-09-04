@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -33,11 +34,12 @@ public class ShapeManager : MonoBehaviour
     private bool endConditionMet = false;
 
     private int currentZIndex = 1;
+    private float resolutionScaleChange = 1.0f;
 
     private Vector2 _adjustedScreenResolution = Vector2.zero;
+    private Vector2 _goalScreenResolution = Vector2.zero;
 
-    private const float BORDER_SCALE = 1.0f;
-    private const float BORDER_DISPLAY_ONSCREEN_PERCENT = 0.95f;
+    private const float BORDER_DISPLAY_ONSCREEN_PERCENT = 0.9f;
     public const int WHITE_INDEX = 0;
     public const int BLACK_INDEX = 1;
 
@@ -54,20 +56,94 @@ public class ShapeManager : MonoBehaviour
             rend.color = _roundColors[_goalColor];
         }
 
-        // when we are building a new level we need to adjust it to the user's aspect ratio without any goal
-        if(_adjustedScreenResolution == Vector2.zero)
+        SetBorderScaleAndPosition();
+    }
+
+    private void SetBorderScaleAndPosition()
+    {
+        // grab screen size
+        var topRightCorner = _mainCam.ScreenToWorldPoint(new Vector3(Screen.width, Screen.height, _mainCam.transform.position.z));
+
+        float aspect = (float)Screen.width / Screen.height;
+        float worldSpaceHeight = _mainCam.orthographicSize * 2;
+        float worldSpaceWidth = worldSpaceHeight * aspect;
+
+        var spriteSize = _borders[0].bounds.size;
+
+        // scale our X to stretch to this value
+        var scaleFactorX = worldSpaceWidth / spriteSize.x;
+
+        // scale our Y to stretch to this value
+        var scaleFactorY = worldSpaceHeight / spriteSize.y;
+
+        // top -> bottom -> left -> right
+        _borders[0].transform.localScale = new Vector3(scaleFactorX, scaleFactorY, 1f);
+        _borders[0].transform.localPosition = new Vector3(_borders[0].bounds.extents.x, topRightCorner.y + (_borders[0].bounds.extents.y * BORDER_DISPLAY_ONSCREEN_PERCENT), -2f);
+
+        _borders[1].transform.localScale = new Vector3(scaleFactorX, scaleFactorY , 1f);
+        _borders[1].transform.localPosition = new Vector3(_borders[1].bounds.extents.x, -_borders[1].bounds.extents.y * BORDER_DISPLAY_ONSCREEN_PERCENT, -2f);
+
+        _borders[2].transform.localScale = new Vector3(scaleFactorX, scaleFactorY, 1f);
+        _borders[2].transform.localPosition = new Vector3(-_borders[2].bounds.extents.x * BORDER_DISPLAY_ONSCREEN_PERCENT, _borders[2].bounds.extents.y, -2f);
+
+        _borders[3].transform.localScale = new Vector3(scaleFactorX, scaleFactorY, 1f);
+        _borders[3].transform.localPosition = new Vector3(topRightCorner.x + (_borders[3].bounds.extents.x * BORDER_DISPLAY_ONSCREEN_PERCENT), _borders[3].bounds.extents.y, -2f);
+
+        float xDiff = scaleFactorX * (1.0f - BORDER_DISPLAY_ONSCREEN_PERCENT) * 0.5f;
+        float yDiff = scaleFactorY * (1.0f - BORDER_DISPLAY_ONSCREEN_PERCENT) * 0.5f;
+
+        _adjustedScreenResolution = new Vector2(scaleFactorX - (scaleFactorX * 2f * (1.0f - BORDER_DISPLAY_ONSCREEN_PERCENT)), scaleFactorY - (scaleFactorY * 2f * (1.0f - BORDER_DISPLAY_ONSCREEN_PERCENT)));
+
+        Debug.Log(_adjustedScreenResolution);
+
+        // when we have no goal resolution or when the current is so close to our current - don't adjust
+        if (_goalScreenResolution == Vector2.zero)
         {
-            SetBorderScaleAndPosition(Vector2.zero);
+            AdjustBordersAndCamera(new Vector3(xDiff, yDiff, 0f));
+            return;
         }
 
-        // we descend z layers here so they do not stack
-        currentZIndex = Shapes.Count * 3;
+        // ToDo TJC: try removing the 0.5f and /2f - seems the current screen is NOT 4:3 - should be able to change to 4:3 resolution and it look 1:1 exact
+        // Something to do with my scaling between is off - width reduction is too small
+        // Need to test going from bigger -> smaller
 
-        foreach(ShapeScript shape in Shapes)
+        float adjustedWidth = (_adjustedScreenResolution.x - _adjustedScreenResolution.y / _goalScreenResolution.y * _goalScreenResolution.x) / 2f;
+
+        // ignore anything that has a very similar aspect ratio
+        if(adjustedWidth <= 0.5f)
         {
-            shape.SetColor(_roundColors[shape.ColorIndex]);
-            shape.SetCallback(ExpandCallback, GetCurrentBackground, EvaluateWinCondition);
+            AdjustBordersAndCamera(new Vector3(xDiff, yDiff, 0f));
+            return;
         }
+
+        float adjustWidthPercent = adjustedWidth / _adjustedScreenResolution.x;
+
+        // we now have our true aspect (to check, divide the _adjustedScreenResolution.x / _adjustedScreenResolution.y and check to see if the ratio is correct)
+        _adjustedScreenResolution = new Vector2(_adjustedScreenResolution.x - (adjustedWidth * 2f), _adjustedScreenResolution.y);
+
+        print(BORDER_DISPLAY_ONSCREEN_PERCENT - adjustWidthPercent);
+
+        _borders[2].transform.localPosition = new Vector3(-_borders[2].bounds.extents.x * (BORDER_DISPLAY_ONSCREEN_PERCENT - adjustWidthPercent), _borders[2].bounds.extents.y, -2f);
+        _borders[3].transform.localPosition = new Vector3(topRightCorner.x + (_borders[2].bounds.extents.x * (BORDER_DISPLAY_ONSCREEN_PERCENT - adjustWidthPercent)), _borders[2].bounds.extents.y, -2f);
+
+        resolutionScaleChange = 1.0f - (_adjustedScreenResolution.x - _goalScreenResolution.x) / _goalScreenResolution.x;
+
+        AdjustBordersAndCamera(new Vector2(scaleFactorX * (1.0f - (BORDER_DISPLAY_ONSCREEN_PERCENT - adjustWidthPercent)) * 0.5f, yDiff));
+
+        Debug.Log(_adjustedScreenResolution + " " + _goalScreenResolution);
+
+        Debug.Log(_adjustedScreenResolution.x / _adjustedScreenResolution.y);
+    }
+
+    private void AdjustBordersAndCamera(Vector3 offset)
+    {
+        foreach (var border in _borders)
+        {
+            border.transform.localPosition -= offset;
+        }
+
+        // transform to add to get to our 'true' 0,0 point with boarders added from the transform of our camera
+        _mainCam.transform.position -= offset;
     }
 
     public int ExpandCallback(int colorIndex, ShapeScript shape)
@@ -177,16 +253,13 @@ public class ShapeManager : MonoBehaviour
     #region Save / Load
     public SaveLoadStructures.Level SaveLevelData()
     {
-        return new SaveLoadStructures.Level(GetShapes(), _roundColors, _startingColor, _goalColor, _adjustedScreenResolution);
+        return new SaveLoadStructures.Level(GetShapes(), _roundColors, _startingColor, _goalColor, _adjustedScreenResolution, new Vector2(Screen.width, Screen.height));
     }
 
     private List<SaveLoadStructures.Shape> GetShapes()
     {
         List<SaveLoadStructures.Shape> allShapeData = new List<SaveLoadStructures.Shape>();
         HelperMethods.ResetIds();
-
-        float height = _mainCam.orthographicSize * 2;
-        float width = height * _mainCam.aspect;
 
         // create an id match dictionary here
         Dictionary<ShapeScript, int> shapeToId = new Dictionary<ShapeScript, int>();
@@ -199,8 +272,8 @@ public class ShapeManager : MonoBehaviour
         foreach(ShapeScript shape in Shapes)
         {
             SaveLoadStructures.Shape shapeData = shape.SaveShapeData(shapeToId);
-            shapeData.position = new Vector2(shapeData.position.x / width, shapeData.position.y / height);
-            shapeData.scale = new Vector2(shapeData.scale.x / width, shapeData.scale.y / height);
+            shapeData.position = new Vector2(shapeData.position.x / _adjustedScreenResolution.x, shapeData.position.y / _adjustedScreenResolution.y);
+            shapeData.scale = new Vector2(shapeData.scale.x / _adjustedScreenResolution.x, shapeData.scale.y / _adjustedScreenResolution.y);
             allShapeData.Add(shapeData);
         }
 
@@ -209,15 +282,23 @@ public class ShapeManager : MonoBehaviour
 
     public void LoadLevelData(SaveLoadStructures.Level levelData)
     {
+        _goalScreenResolution = levelData.screenResolution;
+        // we descend z layers here so they do not stack
+        currentZIndex = levelData.shapes.Count * 3;
+        StartCoroutine(WaitUntilStart(levelData));
+    }
+
+    private IEnumerator WaitUntilStart(SaveLoadStructures.Level levelData)
+    {
+        // wait until after the first update
+        yield return new WaitForFixedUpdate();
+
         Dictionary<int, ShapeScript> idToShape = new Dictionary<int, ShapeScript>();
         HelperMethods.ResetIds();
 
         _startingColor = levelData.startingBackgroundColor;
         _goalColor = levelData.goalBackgroundColor;
         _roundColors = levelData.shapeColors;
-
-        // scale our bounds to properly be set relative to our screen space and to have our borders be adjusted
-        SetBorderScaleAndPosition(levelData.screenResolution);
 
         foreach (SaveLoadStructures.Shape shapeData in levelData.shapes)
         {
@@ -228,19 +309,19 @@ public class ShapeManager : MonoBehaviour
             idToShape.Add(shapeIdx, shape);
             shape.LoadShapeData(shapeData);
 
-            shape.transform.UpdateScaleToFitResolution(_mainCam, levelData.screenResolution, _adjustedScreenResolution);
+            shape.transform.UpdateScaleToFitResolution(_adjustedScreenResolution, resolutionScaleChange);
             shape.SetColor(_roundColors[shapeData.colorIndex]);
             shape.SetShape(ShapeSprites[(int)shapeData.shapeIndex]);
+            shape.SetCallback(ExpandCallback, GetCurrentBackground, EvaluateWinCondition);
 
             // we set the shapesIdx here to the last idx to use later
             shapeData.childShapes.Add(shapeIdx);
         }
 
         // iterate all shape data creating a dictionary 
-
-        foreach(SaveLoadStructures.Shape shapeData in levelData.shapes)
+        foreach (SaveLoadStructures.Shape shapeData in levelData.shapes)
         {
-            if(shapeData.childShapes == default || shapeData.childShapes.Count == 1)
+            if (shapeData.childShapes == default || shapeData.childShapes.Count == 1)
             {
                 continue;
             }
@@ -248,57 +329,12 @@ public class ShapeManager : MonoBehaviour
             // the actual shape idx is stored as the last idx
             int shapeIdx = shapeData.childShapes[shapeData.childShapes.Count - 1];
 
-            for(int x = 0; x < shapeData.childShapes.Count - 1; ++x)
+            for (int x = 0; x < shapeData.childShapes.Count - 1; ++x)
             {
                 // we store the data as global so we keep its world position, rotation, etc. 
                 idToShape[shapeData.childShapes[x]].transform.SetParent(idToShape[shapeIdx].transform, true);
             }
         }
-    }
-
-    private void SetBorderScaleAndPosition(Vector2 goalAspectRatio)
-    {
-        // grab screen size
-        var topRightCorner = _mainCam.ScreenToWorldPoint(new Vector3(Screen.width, Screen.height, _mainCam.transform.position.z));
-        var worldSpaceWidth = topRightCorner.x * 2;
-        var worldSpaceHeight = topRightCorner.y * 2;
-
-        var spriteSize = _borders[0].bounds.size;
-
-        // scale our X to stretch to this value
-        var scaleFactorX = worldSpaceWidth / spriteSize.x;
-
-        // scale our Y to stretch to this value
-        var scaleFactorY = worldSpaceHeight / spriteSize.y;
-
-        // top -> bottom -> left -> right
-        _borders[0].transform.localScale = new Vector3(scaleFactorX, scaleFactorX * BORDER_SCALE, 1f);
-        _borders[0].transform.localPosition = new Vector3(_borders[0].bounds.extents.x / 2f, topRightCorner.y + (_borders[0].bounds.extents.y * BORDER_DISPLAY_ONSCREEN_PERCENT), -2f);
-
-        _borders[1].transform.localScale = new Vector3(scaleFactorX, scaleFactorX * BORDER_SCALE, 1f);
-        _borders[1].transform.localPosition = new Vector3(_borders[0].bounds.extents.x / 2f, -_borders[0].bounds.extents.y * BORDER_DISPLAY_ONSCREEN_PERCENT, -2f);
-
-        _borders[2].transform.localScale = new Vector3(scaleFactorY * BORDER_SCALE, scaleFactorY, 1f);
-        _borders[2].transform.localPosition = new Vector3(-_borders[2].bounds.extents.x * BORDER_DISPLAY_ONSCREEN_PERCENT, _borders[2].bounds.extents.x / 2f, -2f);
-
-        _borders[3].transform.localScale = new Vector3(scaleFactorY * BORDER_SCALE, scaleFactorY, 1f);
-        _borders[3].transform.localPosition = new Vector3(topRightCorner.x + (_borders[2].bounds.extents.x * BORDER_DISPLAY_ONSCREEN_PERCENT), _borders[2].bounds.extents.x / 2f, -2f);
-
-        float xDiff = scaleFactorY * BORDER_SCALE * (1.0f - BORDER_DISPLAY_ONSCREEN_PERCENT) * 0.5f;
-        float yDiff = scaleFactorX * BORDER_SCALE * (1.0f - BORDER_DISPLAY_ONSCREEN_PERCENT) * 0.5f;
-
-        Vector3 posDiff = new Vector3(xDiff, yDiff, 0f);
-
-        foreach (var border in _borders)
-        {
-            border.transform.localPosition -= posDiff;
-        }
-
-        // transform to add to get to our 'true' 0,0 point with boarders added from the transform of our camera
-        _mainCam.transform.position -= posDiff;
-        _adjustedScreenResolution = new Vector2(worldSpaceWidth - (worldSpaceWidth * 2f * (1.0f - BORDER_DISPLAY_ONSCREEN_PERCENT)), worldSpaceHeight - (worldSpaceHeight * 2f * (1.0f - BORDER_DISPLAY_ONSCREEN_PERCENT)));
-
-
     }
     #endregion
 }

@@ -92,7 +92,7 @@ public class ShapeManager : MonoBehaviour
         float xDiff = scaleFactorX * (1.0f - BORDER_DISPLAY_ONSCREEN_PERCENT) * 0.5f;
         float yDiff = scaleFactorY * (1.0f - BORDER_DISPLAY_ONSCREEN_PERCENT) * 0.5f;
 
-        _adjustedScreenResolution = new Vector2(scaleFactorX - (scaleFactorX * 2f * (1.0f - BORDER_DISPLAY_ONSCREEN_PERCENT)), scaleFactorY - (scaleFactorY * 2f * (1.0f - BORDER_DISPLAY_ONSCREEN_PERCENT)));
+        _adjustedScreenResolution = new Vector2(scaleFactorX - (scaleFactorX * (1.0f - BORDER_DISPLAY_ONSCREEN_PERCENT)), scaleFactorY - (scaleFactorY * (1.0f - BORDER_DISPLAY_ONSCREEN_PERCENT)));
 
         Debug.Log(_adjustedScreenResolution);
 
@@ -107,7 +107,7 @@ public class ShapeManager : MonoBehaviour
         // Something to do with my scaling between is off - width reduction is too small
         // Need to test going from bigger -> smaller
 
-        float adjustedWidth = (_adjustedScreenResolution.x - _adjustedScreenResolution.y / _goalScreenResolution.y * _goalScreenResolution.x) / 2f;
+        float adjustedWidth = (_adjustedScreenResolution.x - _adjustedScreenResolution.y / _goalScreenResolution.y * _goalScreenResolution.x);
 
         // ignore anything that has a very similar aspect ratio
         if(adjustedWidth <= 0.5f)
@@ -119,14 +119,21 @@ public class ShapeManager : MonoBehaviour
         float adjustWidthPercent = adjustedWidth / _adjustedScreenResolution.x;
 
         // we now have our true aspect (to check, divide the _adjustedScreenResolution.x / _adjustedScreenResolution.y and check to see if the ratio is correct)
-        _adjustedScreenResolution = new Vector2(_adjustedScreenResolution.x - (adjustedWidth * 2f), _adjustedScreenResolution.y);
+        _adjustedScreenResolution = new Vector2(_adjustedScreenResolution.x - adjustedWidth, _adjustedScreenResolution.y);
 
         print(BORDER_DISPLAY_ONSCREEN_PERCENT - adjustWidthPercent);
 
+        // seems we need to substract the previous X width from these to properly be oriented (?) and shift everything?
+        // appears as if both the left and right are not properly aligned to what we need to anchor to
+
+        // if we subtract the previous border widths it should even out - why is this though? Do we need to remove the existing border from the previous setup?
+        // it could be that the border from the previous is offseting things so we ONLY should do the offset originally if our aspect is 1:1
         _borders[2].transform.localPosition = new Vector3(-_borders[2].bounds.extents.x * (BORDER_DISPLAY_ONSCREEN_PERCENT - adjustWidthPercent), _borders[2].bounds.extents.y, -2f);
         _borders[3].transform.localPosition = new Vector3(topRightCorner.x + (_borders[2].bounds.extents.x * (BORDER_DISPLAY_ONSCREEN_PERCENT - adjustWidthPercent)), _borders[2].bounds.extents.y, -2f);
 
         resolutionScaleChange = 1.0f - (_adjustedScreenResolution.x - _goalScreenResolution.x) / _goalScreenResolution.x;
+
+        Debug.Log(resolutionScaleChange);
 
         AdjustBordersAndCamera(new Vector2(scaleFactorX * (1.0f - (BORDER_DISPLAY_ONSCREEN_PERCENT - adjustWidthPercent)) * 0.5f, yDiff));
 

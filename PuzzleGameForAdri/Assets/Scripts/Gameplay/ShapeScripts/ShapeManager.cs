@@ -89,12 +89,12 @@ public class ShapeManager : MonoBehaviour
         _borders[3].transform.localScale = new Vector3(scaleFactorX, scaleFactorY, 1f);
         _borders[3].transform.localPosition = new Vector3(topRightCorner.x + (_borders[3].bounds.extents.x * BORDER_DISPLAY_ONSCREEN_PERCENT), _borders[3].bounds.extents.y, -2f);
 
+        // find the change in our X / Y based on the borders
         float xDiff = scaleFactorX * (1.0f - BORDER_DISPLAY_ONSCREEN_PERCENT) * 0.5f;
         float yDiff = scaleFactorY * (1.0f - BORDER_DISPLAY_ONSCREEN_PERCENT) * 0.5f;
 
+        // adjust our screen resolution based on our border
         _adjustedScreenResolution = new Vector2(scaleFactorX - (scaleFactorX * (1.0f - BORDER_DISPLAY_ONSCREEN_PERCENT)), scaleFactorY - (scaleFactorY * (1.0f - BORDER_DISPLAY_ONSCREEN_PERCENT)));
-
-        Debug.Log(_adjustedScreenResolution);
 
         // when we have no goal resolution or when the current is so close to our current - don't adjust
         if (_goalScreenResolution == Vector2.zero)
@@ -103,11 +103,12 @@ public class ShapeManager : MonoBehaviour
             return;
         }
 
-        // ToDo TJC: try removing the 0.5f and /2f - seems the current screen is NOT 4:3 - should be able to change to 4:3 resolution and it look 1:1 exact
-        // Something to do with my scaling between is off - width reduction is too small
-        // Need to test going from bigger -> smaller
+        // determine the resolution change compared to our goal
+        float adjustedWidth = _adjustedScreenResolution.x - _adjustedScreenResolution.y / _goalScreenResolution.y * _goalScreenResolution.x;
 
-        float adjustedWidth = (_adjustedScreenResolution.x - _adjustedScreenResolution.y / _goalScreenResolution.y * _goalScreenResolution.x);
+        // ToDo TJC: While the adjustedWidth is greater than the active width, we need to downScale
+            // going from 3200x1400 -> any other resolution, the ratio changing does NOT work
+            // might need to scale based on height in this case
 
         // ignore anything that has a very similar aspect ratio
         if(adjustedWidth <= 0.5f)
@@ -116,30 +117,30 @@ public class ShapeManager : MonoBehaviour
             return;
         }
 
+        AdjustResolutionToGoalResolution(adjustedWidth, topRightCorner, scaleFactorX, yDiff);
+    }
+
+    private void AdjustResolutionToGoalResolution(float adjustedWidth, Vector2 topRightCorner, float scaleFactorX, float yDiff)
+    {
         float adjustWidthPercent = adjustedWidth / _adjustedScreenResolution.x;
 
         // we now have our true aspect (to check, divide the _adjustedScreenResolution.x / _adjustedScreenResolution.y and check to see if the ratio is correct)
         _adjustedScreenResolution = new Vector2(_adjustedScreenResolution.x - adjustedWidth, _adjustedScreenResolution.y);
 
-        print(BORDER_DISPLAY_ONSCREEN_PERCENT - adjustWidthPercent);
+        // update our left / right borders to adjust our screen resolution
+        _borders[2].transform.localPosition = new Vector3(-_borders[2].bounds.extents.x * (CalculateBorderPercent() - adjustWidthPercent), _borders[2].bounds.extents.y, -2f);
+        _borders[3].transform.localPosition = new Vector3(topRightCorner.x + (_borders[2].bounds.extents.x * (CalculateBorderPercent() - adjustWidthPercent)), _borders[2].bounds.extents.y, -2f);
 
-        // seems we need to substract the previous X width from these to properly be oriented (?) and shift everything?
-        // appears as if both the left and right are not properly aligned to what we need to anchor to
-
-        // if we subtract the previous border widths it should even out - why is this though? Do we need to remove the existing border from the previous setup?
-        // it could be that the border from the previous is offseting things so we ONLY should do the offset originally if our aspect is 1:1
-        _borders[2].transform.localPosition = new Vector3(-_borders[2].bounds.extents.x * (BORDER_DISPLAY_ONSCREEN_PERCENT - adjustWidthPercent), _borders[2].bounds.extents.y, -2f);
-        _borders[3].transform.localPosition = new Vector3(topRightCorner.x + (_borders[2].bounds.extents.x * (BORDER_DISPLAY_ONSCREEN_PERCENT - adjustWidthPercent)), _borders[2].bounds.extents.y, -2f);
-
+        // set our resolution change to user later when scaling shapes
         resolutionScaleChange = 1.0f - (_adjustedScreenResolution.x - _goalScreenResolution.x) / _goalScreenResolution.x;
 
-        Debug.Log(resolutionScaleChange);
+        AdjustBordersAndCamera(new Vector2(scaleFactorX * (1.0f - (CalculateBorderPercent() - adjustWidthPercent)) * 0.5f, yDiff));
+    }
 
-        AdjustBordersAndCamera(new Vector2(scaleFactorX * (1.0f - (BORDER_DISPLAY_ONSCREEN_PERCENT - adjustWidthPercent)) * 0.5f, yDiff));
-
-        Debug.Log(_adjustedScreenResolution + " " + _goalScreenResolution);
-
-        Debug.Log(_adjustedScreenResolution.x / _adjustedScreenResolution.y);
+    private float CalculateBorderPercent()
+    {
+        // we only do 50% of the border for each display as the original display factored this in
+        return 1.0f - ((1.0f - BORDER_DISPLAY_ONSCREEN_PERCENT) / 2f);
     }
 
     private void AdjustBordersAndCamera(Vector3 offset)

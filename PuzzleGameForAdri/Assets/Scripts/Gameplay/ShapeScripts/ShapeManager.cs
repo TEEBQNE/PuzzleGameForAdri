@@ -34,7 +34,6 @@ public class ShapeManager : MonoBehaviour
     private bool endConditionMet = false;
 
     private int currentZIndex = 1;
-    private float resolutionScaleChange = 1.0f;
 
     private Vector2 _adjustedScreenResolution = Vector2.zero;
     private Vector2 _goalScreenResolution = Vector2.zero;
@@ -106,21 +105,25 @@ public class ShapeManager : MonoBehaviour
         // determine the resolution change compared to our goal
         float adjustedWidth = _adjustedScreenResolution.x - _adjustedScreenResolution.y / _goalScreenResolution.y * _goalScreenResolution.x;
 
-        // ToDo TJC: While the adjustedWidth is greater than the active width, we need to downScale
-            // going from 3200x1400 -> any other resolution, the ratio changing does NOT work
-            // might need to scale based on height in this case
-
         // ignore anything that has a very similar aspect ratio
         if(adjustedWidth <= 0.5f)
         {
+            if(adjustedWidth < 0.0f)
+            {
+                float adjustedHeight = _adjustedScreenResolution.y - _adjustedScreenResolution.x / _goalScreenResolution.x * _goalScreenResolution.y;
+                AdjustHeightResolutionToGoalResolution(adjustedHeight, topRightCorner, scaleFactorY, xDiff);
+                return;
+            }
+
             AdjustBordersAndCamera(new Vector3(xDiff, yDiff, 0f));
             return;
         }
 
-        AdjustResolutionToGoalResolution(adjustedWidth, topRightCorner, scaleFactorX, yDiff);
+        // scale based on width
+        AdjustWidthResolutionToGoalResolution(adjustedWidth, topRightCorner, scaleFactorX, yDiff);
     }
 
-    private void AdjustResolutionToGoalResolution(float adjustedWidth, Vector2 topRightCorner, float scaleFactorX, float yDiff)
+    private void AdjustWidthResolutionToGoalResolution(float adjustedWidth, Vector2 topRightCorner, float scaleFactorX, float yDiff)
     {
         float adjustWidthPercent = adjustedWidth / _adjustedScreenResolution.x;
 
@@ -131,10 +134,20 @@ public class ShapeManager : MonoBehaviour
         _borders[2].transform.localPosition = new Vector3(-_borders[2].bounds.extents.x * (CalculateBorderPercent() - adjustWidthPercent), _borders[2].bounds.extents.y, -2f);
         _borders[3].transform.localPosition = new Vector3(topRightCorner.x + (_borders[2].bounds.extents.x * (CalculateBorderPercent() - adjustWidthPercent)), _borders[2].bounds.extents.y, -2f);
 
-        // set our resolution change to user later when scaling shapes
-        resolutionScaleChange = 1.0f - (_adjustedScreenResolution.x - _goalScreenResolution.x) / _goalScreenResolution.x;
-
         AdjustBordersAndCamera(new Vector2(scaleFactorX * (1.0f - (CalculateBorderPercent() - adjustWidthPercent)) * 0.5f, yDiff));
+    }
+
+    private void AdjustHeightResolutionToGoalResolution(float adjustedHeight, Vector2 topRightCorner, float scaleFactorY, float xDiff)
+    {
+        float adjustHeightPercent = adjustedHeight / _adjustedScreenResolution.y;
+
+        // we now have our true aspect (to check, divide the _adjustedScreenResolution.x / _adjustedScreenResolution.y and check to see if the ratio is correct)
+        _adjustedScreenResolution = new Vector2(_adjustedScreenResolution.x, _adjustedScreenResolution.y - adjustedHeight);
+
+        _borders[0].transform.localPosition = new Vector3(_borders[0].bounds.extents.x, topRightCorner.y + (_borders[0].bounds.extents.y * (CalculateBorderPercent() - adjustHeightPercent)), -2f);
+        _borders[1].transform.localPosition = new Vector3(_borders[1].bounds.extents.x, -_borders[1].bounds.extents.y * (CalculateBorderPercent() - adjustHeightPercent), -2f);
+
+        AdjustBordersAndCamera(new Vector2(xDiff, scaleFactorY * (1.0f - (CalculateBorderPercent() - adjustHeightPercent)) * 0.5f));
     }
 
     private float CalculateBorderPercent()
@@ -317,7 +330,7 @@ public class ShapeManager : MonoBehaviour
             idToShape.Add(shapeIdx, shape);
             shape.LoadShapeData(shapeData);
 
-            shape.transform.UpdateScaleToFitResolution(_adjustedScreenResolution, resolutionScaleChange);
+            shape.transform.UpdateScaleToFitResolution(_adjustedScreenResolution);
             shape.SetColor(_roundColors[shapeData.colorIndex]);
             shape.SetShape(ShapeSprites[(int)shapeData.shapeIndex]);
             shape.SetCallback(ExpandCallback, GetCurrentBackground, EvaluateWinCondition);

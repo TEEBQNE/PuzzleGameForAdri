@@ -120,8 +120,7 @@ public class ShapeScript : MonoBehaviour
             return;
         }
 
-        // everything starts with colliders off so enable a non parented object here
-        _collider.enabled = true;
+        TogglePhysics(true);
 
         InitializePulsator();
     }

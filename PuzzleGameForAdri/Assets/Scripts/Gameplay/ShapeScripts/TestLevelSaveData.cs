@@ -2,7 +2,7 @@ using UnityEngine;
 
 public class TestLevelSaveData : RequiresSaveLoad
 {
-    [SerializeField] private ShapeManager _shapeManager = null;
+    [SerializeField] private GameShapeManager _shapeManager = null;
 
     public override void Load(SaveLoadFolderNames folder, SaveLoadFileNames file)
     {

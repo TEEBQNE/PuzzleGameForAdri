@@ -61,57 +61,50 @@ using UnityEngine;
 /// /// Add new shapes / check polygon colliders for accuracy (look for an online pack to keep scales equal) - Need a lot of uniform shapes for this)
 /// </summary>
 
-public class ShapeScript : MonoBehaviour
+public class GameShape : BaseShape
 {
-    // ToDo TJC: Remove this as a serialize and have this be loaded
-    [SerializeField] private int _colorIndex = 0;
-    [SerializeField] private ShapeNames _shapeIndex;
-    [SerializeField] private SpriteRenderer _render = null;
-    [SerializeField] private Rigidbody2D _rb = null;
-    [SerializeField] private PolygonCollider2D _collider = null;
-    [SerializeField] private GameObject _pulsatingPrefab = null;
-    [SerializeField] private bool _canBeMoved = true;
-    [SerializeField] private bool _isEditor = false;
-
-    private const int MAX_SCALE = 50;
-    private Vector3 MAX_SCALE_VECTOR = new Vector3(MAX_SCALE, MAX_SCALE, MAX_SCALE);
-    private const float SHRINK_SCALE_DOWN = 0.9f;
-    private const float TIME_TO_SHRINK_AND_GROW = 0.5f;
-    private const float TIME_BETWEEN_PULSATE = 0.45f;
-
-    public Color ShapeColor => _shapeColor;
-    public bool IsPhysicsEnabled => _rb.simulated;
-    public int ColorIndex => _colorIndex;
-    public bool IsExpanding => _changingScaleRoutine != default;
-    public bool CanBeMoved => _canBeMoved;
-
+    #region Variables
+    private Pulsator _pulsator = null;
 
     private float _timeToExpand = 1.5f;
     private float _timeToShrink = 0.5f;
+
     private Coroutine _changingScaleRoutine = null;
     private Coroutine _bounceStretchAndPulsateRoutine = null;
-    private Color _shapeColor = Color.white;
-    private Pulsator _pulsator = null;
+
+    // callbacks
+    private GetZIndex _getZIndex = default;
+    private GetCurrentBackground _getCurrentBackground = default;
+    private CheckWinCondition _checkWinCondition = default;
 
     // list of shapes that should be removed once the expansion is finished
-    private List<ShapeScript> shapesToRemove = new List<ShapeScript>();
-    public delegate int GetZIndex(int colorIndex, ShapeScript shape);
-    private GetZIndex _getZIndex = default;
+    private List<GameShape> shapesToRemove = new List<GameShape>();
+    #endregion
+
+    #region Properties
+    public bool IsPhysicsEnabled => _rb.simulated;
+    public bool IsExpanding => _changingScaleRoutine != default;
+    #endregion
+
+    #region Events
+    public delegate int GetZIndex(int colorIndex, GameShape shape);
     public delegate int GetCurrentBackground();
-    private GetCurrentBackground _getCurrentBackground;
-    public delegate void CheckWinCondition(ShapeScript shape);
-    private CheckWinCondition _checkWinCondition;
+    public delegate void CheckWinCondition(GameShape shape);
+    #endregion
 
     #region Init
-    private void Start()
+    protected override void Start()
     {
+        base.Start();
+
+#if UNITY_EDITOR
         if(_isEditor)
         {
-            TogglePhysics(false);
             return;
         }
+#endif
 
-        if (transform.parent != default && transform.parent.GetComponent<ShapeScript>() != default)
+        if (transform.parent != default && transform.parent.GetComponent<GameShape>() != default)
         {
             TogglePhysics(false);
 
@@ -121,7 +114,6 @@ public class ShapeScript : MonoBehaviour
         }
 
         TogglePhysics(true);
-
         InitializePulsator();
     }
 
@@ -161,7 +153,7 @@ public class ShapeScript : MonoBehaviour
 
         if (collision.gameObject.tag == "Shape")
         {
-            ShapeScript shapeScript = collision.gameObject.GetComponent<ShapeScript>();
+            GameShape shapeScript = collision.gameObject.GetComponent<GameShape>();
 
             if (shapeScript == default)
             {
@@ -182,7 +174,7 @@ public class ShapeScript : MonoBehaviour
     {
         if (collision.gameObject.tag == "Shape")
         {
-            ShapeScript shapeScript = collision.gameObject.GetComponent<ShapeScript>();
+            GameShape shapeScript = collision.gameObject.GetComponent<GameShape>();
 
             if (shapeScript == default)
             {
@@ -313,7 +305,7 @@ public class ShapeScript : MonoBehaviour
             return;
         }
 
-        List<ShapeScript> shapes = new List<ShapeScript>();
+        List<GameShape> shapes = new List<GameShape>();
 
         foreach (Transform child in transform)
         {
@@ -322,7 +314,7 @@ public class ShapeScript : MonoBehaviour
                 continue;
             }
 
-            ShapeScript shape = child.GetComponent<ShapeScript>();
+            GameShape shape = child.GetComponent<GameShape>();
             shapes.Add(shape);
 
             shape.TogglePhysics(true);
@@ -330,7 +322,7 @@ public class ShapeScript : MonoBehaviour
             child.transform.position = new Vector3(child.transform.position.x, child.transform.position.y, 0f);
         }
 
-        foreach (ShapeScript shape in shapes)
+        foreach (GameShape shape in shapes)
         {
             if(shape.CheckBackgroundColor())
             {
@@ -343,9 +335,9 @@ public class ShapeScript : MonoBehaviour
     #endregion
 
     #region Change Color / Change Shape
-    private void HandleColorInteraction(ShapeScript otherShapeScript)
+    private void HandleColorInteraction(GameShape otherShapeScript)
     {
-        if (otherShapeScript.ColorIndex == ShapeManager.BLACK_INDEX || _colorIndex == ShapeManager.BLACK_INDEX)
+        if (otherShapeScript.ColorIndex == BaseShapeManager.BLACK_INDEX || _colorIndex == BaseShapeManager.BLACK_INDEX)
         {
             // to avoid a block hitting to blocks
             if (otherShapeScript.IsExpanding || IsExpanding)
@@ -361,12 +353,12 @@ public class ShapeScript : MonoBehaviour
             return;
         }
 
-        if (otherShapeScript.ColorIndex == ShapeManager.WHITE_INDEX)
+        if (otherShapeScript.ColorIndex == BaseShapeManager.WHITE_INDEX)
         {
             otherShapeScript.SetColor(_shapeColor, _colorIndex);
         }
 
-        if (_colorIndex == ShapeManager.WHITE_INDEX)
+        if (_colorIndex == BaseShapeManager.WHITE_INDEX)
         {
             SetColor(otherShapeScript.ShapeColor, otherShapeScript.ColorIndex);
         }
@@ -390,59 +382,21 @@ public class ShapeScript : MonoBehaviour
         TogglePhysics(false);
         return true;
     }
-
-    public void SetColor(Color color, int overrideIndex = -1)
-    {
-        _shapeColor = color;
-        _render.color = _shapeColor;
-
-        if (overrideIndex == -1)
-        {
-            return;
-        }
-
-        _colorIndex = overrideIndex;
-    }
-
-    public void SetShape(Sprite sprite)
-    {
-        _render.sprite = sprite;
-        _collider.TryUpdateShapeToAttachedSprite();
-    }
-    #endregion
-
-    #region Update Physics
-    public void TogglePhysics(bool toggle)
-    {
-        if(!toggle)
-        {
-            ZeroOutPhysics();
-        }
-
-        _rb.simulated = toggle;
-        _collider.enabled = toggle;
-    }
-
-    public void ZeroOutPhysics()
-    {
-        _rb.velocity = Vector2.zero;
-        _rb.angularVelocity = 0.0f;
-    }
     #endregion
 
     #region Save / Load
-    public SaveLoadStructures.Shape SaveShapeData(Dictionary<ShapeScript, int> idRefs)
+    public SaveLoadStructures.Shape SaveShapeData(Dictionary<GameShape, int> idRefs)
     {
         return new SaveLoadStructures.Shape(GetChildShapes(idRefs), transform.position, transform.lossyScale, transform.rotation, _colorIndex, _shapeIndex, _canBeMoved);
     }
 
-    private List<int> GetChildShapes(Dictionary<ShapeScript, int> idRefs)
+    private List<int> GetChildShapes(Dictionary<GameShape, int> idRefs)
     {
         List<int> shapes = new List<int>();
 
         foreach(Transform trans in transform)
         {
-            ShapeScript shape = trans.GetComponent<ShapeScript>();
+            GameShape shape = trans.GetComponent<GameShape>();
 
             if(shape == default)
             {

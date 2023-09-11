@@ -3,90 +3,29 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-public enum ShapeNames
+public class GameShapeManager : BaseShapeManager
 {
-    SQUARE,
-    CIRCLE,
-    DIAMOND
-}
-
-public class ShapeManager : MonoBehaviour
-{
-#if UNITY_EDITOR
-    [NamedArray(typeof(ShapeNames))]
-#endif
-    [SerializeField] private List<Sprite> ShapeSprites = new List<Sprite>();
-    [SerializeField] private GameObject ShapePrefab = null;
-    [SerializeField] private List<ShapeScript> Shapes = new List<ShapeScript>();
+    #region SerializedFields
     [SerializeField] private GameObject _youWinText = null;
     [SerializeField] private GameObject _youLoseText = null;
-    [SerializeField] private Camera _mainCam = null;
     [SerializeField] private GameObject _replayUI = null;
+    #endregion
 
-    [SerializeField] private int _goalColor = -1;
-    [SerializeField] private int _startingColor = -1;
-
-    private int _currentColor = -1;
-    [SerializeField] private List<SpriteRenderer> _borders = new List<SpriteRenderer>();
-
-    [SerializeField] private List<Color> _roundColors = new List<Color>() { Color.white, Color.black };
-
-    private bool endConditionMet = false;
-
-    private int currentZIndex = 1;
-
+    #region Variables
+    private bool _endConditionMet = false;
+    private int _currentZIndex = 1;
     private Vector2 _adjustedScreenResolution = Vector2.zero;
     private Vector2 _goalScreenResolution = Vector2.zero;
+    #endregion
 
-    private const float BORDER_DISPLAY_ONSCREEN_PERCENT = 0.9f;
-    public const int WHITE_INDEX = 0;
-    public const int BLACK_INDEX = 1;
-
+    #region Inline Methods
     public int GetCurrentBackground() { return _currentColor; }
+    #endregion
 
-    private void Start()
+    #region Resolution Border Scaling
+    protected override void SetBorderScaleAndPosition()
     {
-        _currentColor = _startingColor;
-
-        _mainCam.backgroundColor = _roundColors[_currentColor];
-
-        foreach(SpriteRenderer rend in _borders)
-        {
-            rend.color = _roundColors[_goalColor];
-        }
-
-        SetBorderScaleAndPosition();
-    }
-
-    private void SetBorderScaleAndPosition()
-    {
-        // grab screen size
-        var topRightCorner = _mainCam.ScreenToWorldPoint(new Vector3(Screen.width, Screen.height, _mainCam.transform.position.z));
-
-        float aspect = (float)Screen.width / Screen.height;
-        float worldSpaceHeight = _mainCam.orthographicSize * 2;
-        float worldSpaceWidth = worldSpaceHeight * aspect;
-
-        var spriteSize = _borders[0].bounds.size;
-
-        // scale our X to stretch to this value
-        var scaleFactorX = worldSpaceWidth / spriteSize.x;
-
-        // scale our Y to stretch to this value
-        var scaleFactorY = worldSpaceHeight / spriteSize.y;
-
-        // top -> bottom -> left -> right
-        _borders[0].transform.localScale = new Vector3(scaleFactorX, scaleFactorY, 1f);
-        _borders[0].transform.localPosition = new Vector3(_borders[0].bounds.extents.x, topRightCorner.y + (_borders[0].bounds.extents.y * BORDER_DISPLAY_ONSCREEN_PERCENT), -2f);
-
-        _borders[1].transform.localScale = new Vector3(scaleFactorX, scaleFactorY , 1f);
-        _borders[1].transform.localPosition = new Vector3(_borders[1].bounds.extents.x, -_borders[1].bounds.extents.y * BORDER_DISPLAY_ONSCREEN_PERCENT, -2f);
-
-        _borders[2].transform.localScale = new Vector3(scaleFactorX, scaleFactorY, 1f);
-        _borders[2].transform.localPosition = new Vector3(-_borders[2].bounds.extents.x * BORDER_DISPLAY_ONSCREEN_PERCENT, _borders[2].bounds.extents.y, -2f);
-
-        _borders[3].transform.localScale = new Vector3(scaleFactorX, scaleFactorY, 1f);
-        _borders[3].transform.localPosition = new Vector3(topRightCorner.x + (_borders[3].bounds.extents.x * BORDER_DISPLAY_ONSCREEN_PERCENT), _borders[3].bounds.extents.y, -2f);
+        base.SetBorderScaleAndPosition();
 
         // find the change in our X / Y based on the borders
         float xDiff = scaleFactorX * (1.0f - BORDER_DISPLAY_ONSCREEN_PERCENT) * 0.5f;
@@ -166,19 +105,21 @@ public class ShapeManager : MonoBehaviour
         // transform to add to get to our 'true' 0,0 point with boarders added from the transform of our camera
         _mainCam.transform.position -= offset;
     }
+    #endregion
 
-    public int ExpandCallback(int colorIndex, ShapeScript shape)
+    #region Shape Callbacks
+    public int ExpandCallback(int colorIndex, GameShape shape)
     {
-        int tmpIdx = currentZIndex;
-        --currentZIndex;
+        int tmpIdx = _currentZIndex;
+        --_currentZIndex;
         _currentColor = colorIndex;
         EvaluateWinCondition(shape);
         return tmpIdx;
     }
 
-    public void EvaluateWinCondition(ShapeScript currentShape)
+    public void EvaluateWinCondition(GameShape currentShape)
     {
-        if(endConditionMet)
+        if(_endConditionMet)
         {
             return;
         }
@@ -189,7 +130,7 @@ public class ShapeManager : MonoBehaviour
 
         HashSet<int> colorsPresent = new HashSet<int>();
 
-        foreach(ShapeScript shape in Shapes)
+        foreach(GameShape shape in _shapeScripts)
         {
             if(shape.IsExpanding)
             {
@@ -227,12 +168,19 @@ public class ShapeManager : MonoBehaviour
             }
         }
 
-        if(shapesLeft > 1 && whiteOrBlack && moveableShapes > 0)
+        DisplayWinCondition(shapesLeft, whiteOrBlack, moveableShapes);
+    }
+    #endregion
+
+    #region Helper Methods
+    private void DisplayWinCondition(int shapesLeft, bool whiteOrBlack, int moveableShapes)
+    {
+        if (shapesLeft > 1 && whiteOrBlack && moveableShapes > 0)
         {
             return;
         }
 
-        endConditionMet = true;
+        _endConditionMet = true;
 
         Debug.Log(shapesLeft + " " + _goalColor + " " + _currentColor);
 
@@ -240,15 +188,17 @@ public class ShapeManager : MonoBehaviour
 
         ToggleRestartUI(true);
 
-        if(shapesLeft == 0 && _goalColor == _currentColor)
+        if (shapesLeft == 0 && _goalColor == _currentColor)
         {
             _youWinText.gameObject.SetActive(true);
             return;
         }
-       
+
         _youLoseText.gameObject.SetActive(true);
     }
+    #endregion
 
+    #region Debug / Temp
     private void Update()
     {
         // ToDo TJC: This is just for debugging remove this later - need a permanent solution for mobile
@@ -270,6 +220,7 @@ public class ShapeManager : MonoBehaviour
     {
         _replayUI.SetActive(toggle);
     }
+    #endregion
 
     #region Save / Load
     public SaveLoadStructures.Level SaveLevelData()
@@ -283,14 +234,14 @@ public class ShapeManager : MonoBehaviour
         HelperMethods.ResetIds();
 
         // create an id match dictionary here
-        Dictionary<ShapeScript, int> shapeToId = new Dictionary<ShapeScript, int>();
+        Dictionary<GameShape, int> shapeToId = new Dictionary<GameShape, int>();
 
-        foreach(ShapeScript shape in Shapes)
+        foreach(GameShape shape in _shapeScripts)
         {
             shapeToId.Add(shape, HelperMethods.GetNextId());
         }
 
-        foreach(ShapeScript shape in Shapes)
+        foreach(GameShape shape in _shapeScripts)
         {
             SaveLoadStructures.Shape shapeData = shape.SaveShapeData(shapeToId);
             shapeData.position = new Vector2(shapeData.position.x / _adjustedScreenResolution.x, shapeData.position.y / _adjustedScreenResolution.y);
@@ -305,7 +256,12 @@ public class ShapeManager : MonoBehaviour
     {
         _goalScreenResolution = levelData.screenResolution;
         // we descend z layers here so they do not stack
-        currentZIndex = levelData.shapes.Count * 3;
+        _currentZIndex = levelData.shapes.Count * 3;
+
+        _startingColor = levelData.startingBackgroundColor;
+        _goalColor = levelData.goalBackgroundColor;
+        _roundColors = levelData.shapeColors;
+
         StartCoroutine(WaitUntilStart(levelData));
     }
 
@@ -314,25 +270,21 @@ public class ShapeManager : MonoBehaviour
         // wait until after the first update
         yield return new WaitForFixedUpdate();
 
-        Dictionary<int, ShapeScript> idToShape = new Dictionary<int, ShapeScript>();
+        Dictionary<int, GameShape> idToShape = new Dictionary<int, GameShape>();
         HelperMethods.ResetIds();
-
-        _startingColor = levelData.startingBackgroundColor;
-        _goalColor = levelData.goalBackgroundColor;
-        _roundColors = levelData.shapeColors;
 
         foreach (SaveLoadStructures.Shape shapeData in levelData.shapes)
         {
             int shapeIdx = HelperMethods.GetNextId();
 
-            ShapeScript shape = Instantiate(ShapePrefab).GetComponent<ShapeScript>();
-            Shapes.Add(shape);
+            GameShape shape = Instantiate(ShapePrefab).GetComponent<GameShape>();
+            _shapeScripts.Add(shape);
             idToShape.Add(shapeIdx, shape);
             shape.LoadShapeData(shapeData);
 
             shape.transform.UpdateScaleToFitResolution(_adjustedScreenResolution);
             shape.SetColor(_roundColors[shapeData.colorIndex]);
-            shape.SetShape(ShapeSprites[(int)shapeData.shapeIndex]);
+            shape.SetShape(_shapeSprites[(int)shapeData.shapeIndex]);
             shape.SetCallback(ExpandCallback, GetCurrentBackground, EvaluateWinCondition);
 
             // we set the shapesIdx here to the last idx to use later

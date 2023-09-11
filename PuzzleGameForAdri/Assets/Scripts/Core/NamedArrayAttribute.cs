@@ -17,7 +17,6 @@ public class NamedArrayDrawer : PropertyDrawer
             var enum_names = Enum.GetNames(config.TargetEnum);
             var match = Regex.Match(property.propertyPath, "[-0-9]+", RegexOptions.RightToLeft);
             int pos = int.Parse(match.Groups[0].Value);
-
             // Make names nicer to read (but won't exactly match enum definition).
             var enum_label = ObjectNames.NicifyVariableName(enum_names[pos].ToLower());
             label = new GUIContent(enum_label);
@@ -25,7 +24,7 @@ public class NamedArrayDrawer : PropertyDrawer
         catch
         {
             // keep default label
-            Debug.Log("ERROR");
+            Debug.Log("Error: ");
         }
         EditorGUI.PropertyField(position, property, label, property.isExpanded);
     }

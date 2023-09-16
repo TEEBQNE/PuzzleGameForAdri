@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -84,7 +83,7 @@ public class SaveLoadStructures
             shapes = new List<Shape>();
             shapeColors = new List<Color> { Color.white, Color.black };
             startingBackgroundColor = 0;
-            goalBackgroundColor = 0;
+            goalBackgroundColor = 1;
             actualScreenResolution = new Vector2(Screen.width, Screen.height);
         }
 

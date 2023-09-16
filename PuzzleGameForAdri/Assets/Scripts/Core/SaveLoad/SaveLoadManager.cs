@@ -45,6 +45,7 @@ public class SaveData
     public SaveLoadFileNames FileName;
     public bool shouldSaveData = true;
     public bool shouldLoadData = true;
+    public bool shouldLoadDefaultValues = false;
 }
 
 [DefaultExecutionOrder(-49)]
@@ -71,8 +72,10 @@ public class SaveLoadManager : MonoBehaviour
         // load in all game data for each object in the scene
         foreach (SaveData data in AllSceneSaveLoadData)
         {
-            if(data.shouldLoadData)
-                data.ScriptToSaveLoadTo.Load(data.FolderName, data.FileName);
+            if(data.shouldLoadData || data.shouldLoadDefaultValues)
+            {
+                data.ScriptToSaveLoadTo.Load(data.FolderName, data.FileName, data.shouldLoadDefaultValues);
+            }
         }
 
         Application.logMessageReceived += HandleException;

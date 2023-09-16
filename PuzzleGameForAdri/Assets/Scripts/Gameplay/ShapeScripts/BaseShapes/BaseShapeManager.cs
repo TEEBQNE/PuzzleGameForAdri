@@ -31,9 +31,9 @@ public abstract class BaseShapeManager : MonoBehaviour
     #region Variables
     protected List<GameShape> _shapeScripts = new List<GameShape>();
 
-    protected int _goalColor = -1;
-    protected int _startingColor = -1;
-    protected int _currentColor = -1;
+    protected int _goalColor = 1;
+    protected int _startingColor = 0;
+    protected int _currentColor = 0;
     protected Vector3 topRightCorner;
     protected float aspect;
     protected float worldSpaceHeight;

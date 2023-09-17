@@ -2,12 +2,17 @@ using UnityEngine;
 
 public class DragAndDrop : MonoBehaviour
 {
+    #region SerializedFields
     [SerializeField] private Camera _mainCam;
     [SerializeField] private float _increaseSpeed = 50f;
+    #endregion
 
+
+    #region Variables
     private Rigidbody2D _activeRb = default;
     private Collider2D _activeCollider = default;
     private Vector3 _offset = Vector2.zero;
+    #endregion
 
     private void Update()
     {
@@ -24,6 +29,7 @@ public class DragAndDrop : MonoBehaviour
         }
     }
 
+    // ToDo TJC: Determine if this works for mobile (iOS and Android)
     private void DetermineMouseClick()
     {
         if(_activeRb != default)
@@ -40,7 +46,8 @@ public class DragAndDrop : MonoBehaviour
             return;
         }
 
-        ShapeScript shape = hit.collider.GetComponent<ShapeScript>();
+        // ToDo TJC: Need to determine if we are editing or actually playing - or do we?
+        BaseShape shape = hit.collider.GetComponent<BaseShape>();
         if (shape == default || !shape.CanBeMoved)
         {
             _activeRb = default;

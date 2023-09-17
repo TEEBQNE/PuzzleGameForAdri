@@ -5,7 +5,7 @@
 /// </summary>
 public abstract class RequiresSaveLoad : MonoBehaviour
 {
-    public abstract void Load(SaveLoadFolderNames folder, SaveLoadFileNames file);
+    public abstract void Load(SaveLoadFolderNames folder, SaveLoadFileNames file, bool defaultValues = false);
 
     public abstract void Save(SaveLoadFolderNames folder, SaveLoadFileNames file);
 

@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -84,17 +83,18 @@ public class SaveLoadStructures
             shapes = new List<Shape>();
             shapeColors = new List<Color> { Color.white, Color.black };
             startingBackgroundColor = 0;
-            goalBackgroundColor = 0;
-            screenResolution = new Vector2(Screen.width, Screen.height);
+            goalBackgroundColor = 1;
+            actualScreenResolution = new Vector2(Screen.width, Screen.height);
         }
 
-        public Level(List<Shape> childShapes, List<Color> colors, int startingColor, int goalColor, Vector2 resolution)
+        public Level(List<Shape> childShapes, List<Color> colors, int startingColor, int goalColor, Vector2 resolution, Vector2 actualResolution)
         {
             shapes = childShapes;
             shapeColors = colors;
             startingBackgroundColor = startingColor;
             goalBackgroundColor = goalColor;
             screenResolution = resolution;
+            actualScreenResolution = actualResolution;
         }
 
         public List<Shape> shapes;
@@ -102,8 +102,9 @@ public class SaveLoadStructures
         public int startingBackgroundColor;
         public int goalBackgroundColor;
 
-        // this should be moved to 
-        public Vector2 screenResolution;
+        // these should be moved to packs
+        public Vector2 screenResolution;        // world screen space resolution
+        public Vector2 actualScreenResolution;  // actual resolution
     }
 
     [System.Serializable]

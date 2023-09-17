@@ -4,9 +4,9 @@ public class PlayerDataSaveLoad : RequiresSaveLoad
 {
     [SerializeField] private LevelSelectionManager _levelSelectionManager = null;
 
-    public override void Load(SaveLoadFolderNames folder, SaveLoadFileNames file)
+    public override void Load(SaveLoadFolderNames folder, SaveLoadFileNames file, bool shouldDefaultValues)
     {
-        _levelSelectionManager.LoadUsernameData(SaveLoad<SaveLoadStructures.PlayerUserData>.Load(folder, file) ?? new SaveLoadStructures.PlayerUserData());
+        _levelSelectionManager.LoadUsernameData(shouldDefaultValues ? new SaveLoadStructures.PlayerUserData() : SaveLoad<SaveLoadStructures.PlayerUserData>.Load(folder, file) ?? new SaveLoadStructures.PlayerUserData());
     }
 
     public override void PrintCurrentSaveData()

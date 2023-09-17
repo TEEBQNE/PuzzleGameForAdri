@@ -1,12 +1,12 @@
 using UnityEngine;
 
-public class TestLevelSaveData : RequiresSaveLoad
+public class LevelSaveData : RequiresSaveLoad
 {
-    [SerializeField] private ShapeManager _shapeManager = null;
+    [SerializeField] private GameShapeManager _shapeManager = null;
 
-    public override void Load(SaveLoadFolderNames folder, SaveLoadFileNames file)
+    public override void Load(SaveLoadFolderNames folder, SaveLoadFileNames file, bool shouldDefaultValues = false)
     {
-        _shapeManager.LoadLevelData(SaveLoad<SaveLoadStructures.Level>.Load(folder, file) ?? new SaveLoadStructures.Level());
+        _shapeManager.LoadLevelData(shouldDefaultValues ? new SaveLoadStructures.Level() : SaveLoad<SaveLoadStructures.Level>.Load(folder, file) ?? new SaveLoadStructures.Level());
     }
 
     // ToDo TJC: Need to add a print to the manager which calls the child shapes

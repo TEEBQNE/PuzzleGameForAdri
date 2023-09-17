@@ -709,29 +709,26 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1403b4c320b28409b911965a9fa8dc12, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  ShapeSprites:
+  _shapeSprites:
   - {fileID: 7482667652216324306, guid: 75f361360a2ce4369b981889c97c5415, type: 3}
   - {fileID: -2413806693520163455, guid: 6e10d6b260e1d4e7584a8659bd0db3a5, type: 3}
   - {fileID: 3625043607559282579, guid: 656e8416afc0841adb45c61bcdb2ccb5, type: 3}
-  ShapePrefab: {fileID: 8835435351997027053, guid: be528a33a5df1439086ee2e08636f637, type: 3}
-  Shapes: []
-  _youWinText: {fileID: 1880328040}
-  _youLoseText: {fileID: 1231410063}
-  _mainCam: {fileID: 519420031}
-  _replayUI: {fileID: 1490300617}
-  _goalColor: 4
-  _startingColor: 2
-  _borders:
-  - {fileID: 1908655537}
-  - {fileID: 1165590609}
-  - {fileID: 987137408}
-  - {fileID: 102345455}
   _roundColors:
   - {r: 1, g: 0.995283, b: 0.995283, a: 1}
   - {r: 0, g: 0, b: 0, a: 1}
   - {r: 0.5860655, g: 0.4014329, b: 0.8773585, a: 1}
   - {r: 0.9622642, g: 0.35857958, b: 0.6594754, a: 1}
   - {r: 0.9929334, g: 1, b: 0.3726415, a: 1}
+  _borders:
+  - {fileID: 1908655537}
+  - {fileID: 1165590609}
+  - {fileID: 987137408}
+  - {fileID: 102345455}
+  ShapePrefab: {fileID: 8835435351997027053, guid: be528a33a5df1439086ee2e08636f637, type: 3}
+  _mainCam: {fileID: 519420031}
+  _youWinText: {fileID: 1880328040}
+  _youLoseText: {fileID: 1231410063}
+  _replayUI: {fileID: 1490300617}
 --- !u!114 &1103355193
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1177,12 +1174,12 @@ GameObject:
   - component: {fileID: 1773370003}
   - component: {fileID: 1773370002}
   m_Layer: 0
-  m_Name: Square
+  m_Name: Empty_Test_Square
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!212 &1773370002
 SpriteRenderer:
   m_ObjectHideFlags: 0

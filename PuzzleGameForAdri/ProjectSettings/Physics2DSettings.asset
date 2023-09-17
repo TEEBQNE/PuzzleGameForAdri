@@ -18,7 +18,7 @@ Physics2DSettings:
   m_TimeToSleep: 0.5
   m_LinearSleepTolerance: 0.01
   m_AngularSleepTolerance: 2
-  m_DefaultContactOffset: 0.01
+  m_DefaultContactOffset: 0.001
   m_JobOptions:
     serializedVersion: 2
     useMultithreading: 0
@@ -41,7 +41,7 @@ Physics2DSettings:
   m_SimulationMode: 0
   m_QueriesHitTriggers: 1
   m_QueriesStartInColliders: 1
-  m_CallbacksOnDisable: 1
+  m_CallbacksOnDisable: 0
   m_ReuseCollisionCallbacks: 1
   m_AutoSyncTransforms: 0
   m_AlwaysShowColliders: 0
